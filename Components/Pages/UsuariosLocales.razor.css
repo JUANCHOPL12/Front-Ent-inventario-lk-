@@ -1,0 +1,621 @@
+.lk-ul-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1.35rem;
+    max-width: 1380px;
+    margin: 0 auto;
+    font-family: 'Plus Jakarta Sans', 'Segoe UI', sans-serif;
+}
+
+/* Acceso Restringido */
+.lk-restricted-box {
+    max-width: 480px;
+    margin: 3rem auto;
+    background: #ffffff;
+    border-radius: 20px;
+    padding: 2.25rem;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+    border: 1px solid #e2e8f0;
+}
+
+.lk-restricted-box i {
+    font-size: 2.6rem;
+    color: #d91e1e;
+}
+
+.lk-restricted-box h2 {
+    margin: 0.75rem 0 0.4rem;
+    font-family: 'Russo One', sans-serif;
+    color: #0b1736;
+}
+
+/* 1. Encabezado */
+.lk-ul-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.lk-ul-title-group {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.lk-ul-accent {
+    width: 6px;
+    height: 48px;
+    border-radius: 999px;
+    background: linear-gradient(180deg, #0d5be1 0%, #053399 100%);
+    flex-shrink: 0;
+}
+
+.lk-ul-title {
+    margin: 0;
+    font-family: 'Russo One', sans-serif;
+    font-size: 1.72rem;
+    font-weight: 400;
+    color: #0b1736;
+    line-height: 1.15;
+    letter-spacing: 0.4px;
+}
+
+.lk-ul-subtitle {
+    margin: 2px 0 0;
+    font-size: 0.9rem;
+    color: #475569;
+    font-weight: 500;
+}
+
+.lk-btn-new-user {
+    border: none;
+    border-radius: 12px;
+    padding: 0.72rem 1.35rem;
+    background: linear-gradient(180deg, #e51d1d 0%, #b00909 100%);
+    color: #ffffff;
+    font-family: 'Russo One', sans-serif;
+    font-size: 0.92rem;
+    font-weight: 400;
+    letter-spacing: 0.4px;
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    box-shadow: 0 6px 16px rgba(217, 30, 30, 0.28);
+    transition: transform 0.15s ease, filter 0.15s ease;
+}
+
+.lk-btn-new-user:hover {
+    filter: brightness(1.08);
+    transform: translateY(-1px);
+}
+
+/* Notificación */
+.lk-ul-toast {
+    background: #dcfce7;
+    border: 1px solid #86efac;
+    color: #166534;
+    border-radius: 12px;
+    padding: 0.78rem 1.1rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.lk-toast-content {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+}
+
+.lk-ul-toast button {
+    border: none;
+    background: transparent;
+    color: inherit;
+}
+
+/* 2. Tarjetas de Sucursales */
+.lk-branches-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.35rem;
+}
+
+.lk-branch-card {
+    background: #ffffff;
+    border-radius: 18px;
+    box-shadow: 0 6px 20px rgba(15, 23, 42, 0.06);
+    border: 1px solid #e2e8f0;
+    overflow: hidden;
+}
+
+.lk-branch-header {
+    background: linear-gradient(90deg, #06153d 0%, #0b2669 100%);
+    color: #ffffff;
+    padding: 0.85rem 1.25rem;
+    font-family: 'Russo One', sans-serif;
+    font-size: 1.05rem;
+    font-weight: 400;
+    letter-spacing: 0.4px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.lk-branch-body {
+    padding: 1.25rem;
+    display: grid;
+    grid-template-columns: 185px 1fr;
+    gap: 1.2rem;
+    align-items: center;
+}
+
+/* Fachada gráfica corporativa LK */
+.lk-storefront-box {
+    background: linear-gradient(145deg, #071b4a 0%, #0d44a8 100%);
+    border-radius: 14px;
+    padding: 1rem 0.75rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    min-height: 155px;
+    border: 2px solid #cbd5e1;
+    box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.35);
+}
+
+.lk-storefront-sign {
+    background: #ffffff;
+    border-radius: 10px;
+    padding: 0.45rem 0.65rem;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+}
+
+.sign-text {
+    display: flex;
+    flex-direction: column;
+    line-height: 0.95;
+}
+
+.sign-top {
+    font-family: 'Russo One', sans-serif;
+    font-size: 0.62rem;
+    color: #0d5be1;
+}
+
+.sign-bottom {
+    font-family: 'Russo One', sans-serif;
+    font-size: 0.85rem;
+    color: #06153d;
+}
+
+.sign-lk {
+    font-family: 'Archivo Black', sans-serif;
+    font-style: italic;
+    font-size: 1.35rem;
+    color: #d91e1e;
+    line-height: 1;
+}
+
+.lk-storefront-tag {
+    background: rgba(255, 255, 255, 0.14);
+    color: #ffffff;
+    font-size: 0.68rem;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    padding: 3px 9px;
+    border-radius: 999px;
+}
+
+.lk-branch-details {
+    display: flex;
+    flex-direction: column;
+    gap: 0.7rem;
+}
+
+.lk-branch-address {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: #1e293b;
+    line-height: 1.35;
+}
+
+.lk-branch-address i {
+    color: #0d5be1;
+    font-size: 1.1rem;
+    margin-top: 1px;
+}
+
+.lk-badge-active,
+.lk-badge-inactive {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0.3rem 0.9rem;
+    border-radius: 999px;
+    font-size: 0.82rem;
+    font-weight: 700;
+}
+
+.lk-badge-active {
+    background: #10b981;
+    color: #ffffff;
+}
+
+.lk-badge-inactive {
+    background: #64748b;
+    color: #ffffff;
+}
+
+.lk-branch-staff {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.92rem;
+    font-weight: 800;
+    color: #0b1736;
+}
+
+.lk-branch-staff i {
+    font-size: 1.15rem;
+    color: #06153d;
+}
+
+.lk-btn-edit-branch {
+    width: 100%;
+    border: none;
+    border-radius: 999px;
+    padding: 0.58rem 1rem;
+    background: linear-gradient(180deg, #0d6efd 0%, #06399c 100%);
+    color: #ffffff;
+    font-family: 'Russo One', sans-serif;
+    font-size: 0.86rem;
+    font-weight: 400;
+    letter-spacing: 0.3px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    box-shadow: 0 4px 12px rgba(13, 91, 225, 0.25);
+    transition: filter 0.15s ease, transform 0.15s ease;
+}
+
+.lk-btn-edit-branch:hover {
+    filter: brightness(1.08);
+    transform: translateY(-1px);
+}
+
+/* 3. Tabla Control de Accesos y Cajeros */
+.lk-access-card {
+    background: #ffffff;
+    border-radius: 18px;
+    box-shadow: 0 6px 20px rgba(15, 23, 42, 0.06);
+    border: 1px solid #e2e8f0;
+    overflow: hidden;
+}
+
+.lk-access-header {
+    background: linear-gradient(90deg, #06153d 0%, #0b2669 100%);
+    color: #ffffff;
+    padding: 0.85rem 1.25rem;
+    font-family: 'Russo One', sans-serif;
+    font-size: 1.05rem;
+    font-weight: 400;
+    letter-spacing: 0.4px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.lk-table-responsive {
+    width: 100%;
+    overflow-x: auto;
+}
+
+.lk-users-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+}
+
+.lk-users-table thead tr {
+    background: #081e54;
+    color: #ffffff;
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.lk-users-table th {
+    padding: 0.82rem 1rem;
+    font-family: 'Russo One', sans-serif;
+    font-size: 0.82rem;
+    font-weight: 400;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+}
+
+.lk-users-table td {
+    padding: 0.85rem 1rem;
+    border-bottom: 1px solid #f1f5f9;
+    vertical-align: middle;
+}
+
+.lk-users-table tbody tr:hover {
+    background: #f8fafc;
+}
+
+.lk-users-table tbody tr.row-disabled {
+    opacity: 0.58;
+    background: #f8fafc;
+}
+
+.lk-username-cell {
+    font-weight: 700;
+    color: #0b1736;
+}
+
+.lk-fullname-cell {
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.lk-sede-cell {
+    font-weight: 600;
+    color: #334155;
+}
+
+.lk-role-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 0.32rem 0.95rem;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #ffffff;
+}
+
+.role-admin {
+    background: linear-gradient(180deg, #dc2626 0%, #991b1b 100%);
+}
+
+.role-admin i {
+    color: #facc15;
+}
+
+.role-cashier {
+    background: linear-gradient(180deg, #0d6efd 0%, #0741ad 100%);
+}
+
+.lk-state-pill {
+    display: inline-block;
+    padding: 0.3rem 0.95rem;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 700;
+}
+
+.state-on {
+    background: #10b981;
+    color: #ffffff;
+}
+
+.state-off {
+    background: #94a3b8;
+    color: #ffffff;
+}
+
+.lk-action-group {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+}
+
+.lk-icon-btn {
+    width: 34px;
+    height: 30px;
+    border: none;
+    border-radius: 8px;
+    color: #ffffff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    transition: transform 0.12s ease, filter 0.12s ease;
+}
+
+.lk-icon-btn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+
+.lk-icon-btn:hover:not(:disabled) {
+    filter: brightness(1.1);
+    transform: translateY(-1px);
+}
+
+.btn-blue {
+    background: #0d5be1;
+}
+
+.btn-red {
+    background: #d91e1e;
+}
+
+.btn-green {
+    background: #059669;
+}
+
+/* =========================================================
+   MODALES
+   ========================================================= */
+.lk-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(6, 17, 51, 0.58);
+    backdrop-filter: blur(4px);
+    z-index: 1050;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+}
+
+.lk-modal-card {
+    width: 100%;
+    max-width: 480px;
+    background: #ffffff;
+    border-radius: 18px;
+    box-shadow: 0 24px 60px rgba(6, 17, 51, 0.45);
+    overflow: hidden;
+}
+
+.lk-modal-header {
+    background: linear-gradient(90deg, #06153d 0%, #0b2669 100%);
+    color: #ffffff;
+    padding: 0.95rem 1.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.lk-modal-title {
+    font-family: 'Russo One', sans-serif;
+    font-size: 1.02rem;
+    letter-spacing: 0.4px;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+}
+
+.lk-modal-close {
+    border: none;
+    background: rgba(255, 255, 255, 0.12);
+    color: #ffffff;
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.lk-modal-body {
+    padding: 1.3rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.lk-modal-error {
+    background: #fee2e2;
+    color: #b91c1c;
+    padding: 0.6rem 0.85rem;
+    border-radius: 10px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.lk-field-label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #334155;
+    margin-bottom: 5px;
+}
+
+.lk-field-input {
+    width: 100%;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 10px;
+    padding: 0.58rem 0.8rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #0b1736;
+    background: #f8fafc;
+    outline: none;
+}
+
+.lk-field-input:focus {
+    border-color: #0d5be1;
+    background: #ffffff;
+}
+
+.lk-checkbox-row {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    font-size: 0.86rem;
+    font-weight: 600;
+    color: #1e293b;
+    cursor: pointer;
+}
+
+.lk-clave-desc {
+    margin: 0;
+    font-size: 0.88rem;
+    color: #334155;
+}
+
+.lk-modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 0.35rem;
+}
+
+.lk-btn-cancel {
+    border: 1px solid #cbd5e1;
+    background: #ffffff;
+    color: #475569;
+    border-radius: 10px;
+    padding: 0.58rem 1.1rem;
+    font-weight: 700;
+}
+
+.lk-btn-save-blue,
+.lk-btn-save-red {
+    border: none;
+    border-radius: 10px;
+    padding: 0.58rem 1.25rem;
+    color: #ffffff;
+    font-family: 'Russo One', sans-serif;
+    font-size: 0.88rem;
+    font-weight: 400;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+}
+
+.lk-btn-save-blue {
+    background: linear-gradient(180deg, #0d6efd 0%, #06399c 100%);
+}
+
+.lk-btn-save-red {
+    background: linear-gradient(180deg, #e51d1d 0%, #b00909 100%);
+}
+
+@media (max-width: 1050px) {
+    .lk-branches-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 576px) {
+    .lk-branch-body {
+        grid-template-columns: 1fr;
+    }
+}

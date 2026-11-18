@@ -1,0 +1,584 @@
+@page "/usuarios"
+@page "/administracion"
+@page "/usuarios-locales"
+@page "/configuracion"
+@implements IDisposable
+@using TecnologiaDigitalLK.Models
+@using TecnologiaDigitalLK.Services.Interfaces
+@inject IAdministracionService AdministracionService
+@inject IUserSessionService SessionService
+@inject NavigationManager Nav
+
+<PageTitle>Usuarios & Locales - Tecnología Digital LK</PageTitle>
+
+@if (!SessionService.EsAdmin)
+{
+    <div class="lk-restricted-box">
+        <i class="bi bi-shield-lock-fill"></i>
+        <h2>Acceso Restringido</h2>
+        <p>Solo el perfil de <strong>Administradora (Luz Karime)</strong> tiene permisos para gestionar sucursales y credenciales de cajeros.</p>
+        <button type="button" class="lk-btn-blue" @onclick='() => Nav.NavigateTo("/pos")'>
+            Volver al Punto de Venta
+        </button>
+    </div>
+}
+else
+{
+    <div class="lk-ul-container">
+        <!-- 1. ENCABEZADO -->
+        <div class="lk-ul-header">
+            <div class="lk-ul-title-group">
+                <span class="lk-ul-accent"></span>
+                <div>
+                    <h1 class="lk-ul-title">Usuarios & Locales</h1>
+                    <p class="lk-ul-subtitle">
+                        Tecnología Digital LK • C.C. Sanandrexitos Piso 2, Locales 2003 y 2039, Ibagué
+                    </p>
+                </div>
+            </div>
+
+            <button type="button" class="lk-btn-new-user" @onclick="AbrirModalNuevoUsuario">
+                <i class="bi bi-person-plus-fill"></i>
+                <span>Nuevo Usuario</span>
+            </button>
+        </div>
+
+        <!-- NOTIFICACIÓN DE CONFIRMACIÓN -->
+        @if (!string.IsNullOrEmpty(mensajeFeedback))
+        {
+            <div class="lk-ul-toast">
+                <div class="lk-toast-content">
+                    <i class="bi bi-check-circle-fill"></i>
+                    <span>@mensajeFeedback</span>
+                </div>
+                <button type="button" @onclick="() => mensajeFeedback = null">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+        }
+
+        <!-- 2. TARJETAS DE SUCURSALES (LOCAL 2003 Y LOCAL 2039) -->
+        <div class="lk-branches-grid">
+            @foreach (var sede in sedes)
+            {
+                int cajerosAsignados = usuarios.Count(u => u.Rol == RolUsuario.Cajero && u.SedeId == sede.Id && u.Activo);
+
+                <div class="lk-branch-card">
+                    <div class="lk-branch-header">
+                        <i class="bi bi-shop-window"></i>
+                        <span>@sede.Nombre</span>
+                    </div>
+
+                    <div class="lk-branch-body">
+                        <!-- Fachada gráfica corporativa LK -->
+                        <div class="lk-storefront-box">
+                            <div class="lk-storefront-sign">
+                                <div class="sign-text">
+                                    <span class="sign-top">TECNOLOGÍA</span>
+                                    <span class="sign-bottom">DIGITAL</span>
+                                </div>
+                                <span class="sign-lk">LK</span>
+                            </div>
+                            <div class="lk-storefront-tag">
+                                @(sede.Id == 1 ? "LOCAL 2003 • PISO 2" : "LOCAL 2039 • PISO 2")
+                            </div>
+                        </div>
+
+                        <!-- Información y botón editar -->
+                        <div class="lk-branch-details">
+                            <div class="lk-branch-address">
+                                <i class="bi bi-geo-alt-fill"></i>
+                                <span>@sede.Direccion</span>
+                            </div>
+
+                            <div>
+                                @if (sede.Activa)
+                                {
+                                    <span class="lk-badge-active">
+                                        <i class="bi bi-check-circle-fill"></i>
+                                        <span>Activa</span>
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="lk-badge-inactive">
+                                        <i class="bi bi-pause-circle-fill"></i>
+                                        <span>Inactiva</span>
+                                    </span>
+                                }
+                            </div>
+
+                            <div class="lk-branch-staff">
+                                <i class="bi bi-people-fill"></i>
+                                <span>
+                                    @cajerosAsignados @(cajerosAsignados == 1 ? "Cajero Asignado" : "Cajeros Asignados")
+                                </span>
+                            </div>
+
+                            <button type="button" class="lk-btn-edit-branch" @onclick="() => AbrirModalEditarSede(sede)">
+                                <i class="bi bi-pencil-fill"></i>
+                                <span>Editar Sede</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <!-- 3. TABLA: CONTROL DE ACCESOS Y CAJEROS -->
+        <div class="lk-access-card">
+            <div class="lk-access-header">
+                <i class="bi bi-people-fill"></i>
+                <span>Control de Accesos y Cajeros</span>
+            </div>
+
+            <div class="lk-table-responsive">
+                <table class="lk-users-table">
+                    <thead>
+                        <tr>
+                            <th>Usuario</th>
+                            <th>Nombre Completo</th>
+                            <th class="text-center">Rol</th>
+                            <th class="text-center">Local Asignado</th>
+                            <th class="text-center">Estado</th>
+                            <th class="text-center">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var user in usuarios)
+                        {
+                            <tr class="@(!user.Activo ? "row-disabled" : "")">
+                                <td class="lk-username-cell">@user.Username</td>
+                                <td class="lk-fullname-cell">@user.NombreCompleto</td>
+
+                                <!-- Rol -->
+                                <td class="text-center">
+                                    @if (user.Rol == RolUsuario.Admin)
+                                    {
+                                        <span class="lk-role-pill role-admin">
+                                            <i class="bi bi-award-fill"></i>
+                                            <span>Administradora</span>
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="lk-role-pill role-cashier">
+                                            <i class="bi bi-person-fill"></i>
+                                            <span>Cajero</span>
+                                        </span>
+                                    }
+                                </td>
+
+                                <!-- Local Asignado -->
+                                <td class="text-center lk-sede-cell">
+                                    @ObtenerEtiquetaSedeUsuario(user)
+                                </td>
+
+                                <!-- Estado -->
+                                <td class="text-center">
+                                    @if (user.Activo)
+                                    {
+                                        <span class="lk-state-pill state-on">Activo</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="lk-state-pill state-off">Suspendido</span>
+                                    }
+                                </td>
+
+                                <!-- Acciones -->
+                                <td class="text-center">
+                                    <div class="lk-action-group">
+                                        <button type="button"
+                                                class="lk-icon-btn btn-blue"
+                                                title="Editar usuario y local asignado"
+                                                @onclick="() => AbrirModalEditarUsuario(user)">
+                                            <i class="bi bi-pencil-fill"></i>
+                                        </button>
+
+                                        <button type="button"
+                                                class="lk-icon-btn btn-blue"
+                                                title="Restablecer contraseña"
+                                                @onclick="() => AbrirModalClave(user)">
+                                            <i class="bi bi-lock-fill"></i>
+                                        </button>
+
+                                        <button type="button"
+                                                class="lk-icon-btn @(user.Activo ? "btn-red" : "btn-green")"
+                                                title="@(user.Activo ? "Suspender acceso" : "Reactivar acceso")"
+                                                disabled="@(user.Rol == RolUsuario.Admin && usuarios.Count(u => u.Rol == RolUsuario.Admin && u.Activo) <= 1 && user.Activo)"
+                                                @onclick="() => AlternarEstadoUsuarioAsync(user)">
+                                            <i class="bi @(user.Activo ? "bi-pause-fill" : "bi-play-fill")"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- =========================================================
+             MODAL 1: EDITAR SEDE / SUCURSAL
+             ========================================================= -->
+        @if (mostrarModalSede)
+        {
+            <div class="lk-modal-backdrop" @onclick="CerrarModals">
+                <div class="lk-modal-card" @onclick:stopPropagation="true">
+                    <div class="lk-modal-header">
+                        <div class="lk-modal-title">
+                            <i class="bi bi-shop-window"></i>
+                            <span>Configurar Sucursal</span>
+                        </div>
+                        <button type="button" class="lk-modal-close" @onclick="CerrarModals">
+                            <i class="bi bi-x-lg"></i>
+                        </button>
+                    </div>
+
+                    <div class="lk-modal-body">
+                        <div>
+                            <label class="lk-field-label">Nombre de la Sede</label>
+                            <input type="text" class="lk-field-input" @bind="sedeEditando.Nombre" />
+                        </div>
+
+                        <div>
+                            <label class="lk-field-label">Dirección Física</label>
+                            <input type="text" class="lk-field-input" @bind="sedeEditando.Direccion" />
+                        </div>
+
+                        <label class="lk-checkbox-row">
+                            <input type="checkbox" @bind="sedeEditando.Activa" />
+                            <span>Sede operativa y habilitada para facturación</span>
+                        </label>
+
+                        <div class="lk-modal-footer">
+                            <button type="button" class="lk-btn-cancel" @onclick="CerrarModals">Cancelar</button>
+                            <button type="button" class="lk-btn-save-blue" @onclick="GuardarSedeAsync">
+                                <i class="bi bi-check-lg"></i>
+                                <span>Guardar Cambios</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+
+        <!-- =========================================================
+             MODAL 2: CREAR / EDITAR USUARIO Y PERMISOS
+             ========================================================= -->
+        @if (mostrarModalUsuario)
+        {
+            <div class="lk-modal-backdrop" @onclick="CerrarModals">
+                <div class="lk-modal-card" @onclick:stopPropagation="true">
+                    <div class="lk-modal-header">
+                        <div class="lk-modal-title">
+                            <i class="bi bi-person-badge-fill"></i>
+                            <span>@(usuarioEditando.Id == 0 ? "Crear Nuevo Usuario" : "Editar Credenciales y Rol")</span>
+                        </div>
+                        <button type="button" class="lk-modal-close" @onclick="CerrarModals">
+                            <i class="bi bi-x-lg"></i>
+                        </button>
+                    </div>
+
+                    <div class="lk-modal-body">
+                        @if (!string.IsNullOrEmpty(errorModalUsuario))
+                        {
+                            <div class="lk-modal-error">
+                                <i class="bi bi-exclamation-circle-fill"></i>
+                                <span>@errorModalUsuario</span>
+                            </div>
+                        }
+
+                        <div>
+                            <label class="lk-field-label">Nombre Completo</label>
+                            <input type="text"
+                                   class="lk-field-input"
+                                   placeholder="Ej. Laura Torres"
+                                   @bind="usuarioEditando.NombreCompleto" />
+                        </div>
+
+                        <div>
+                            <label class="lk-field-label">Usuario de Ingreso</label>
+                            <input type="text"
+                                   class="lk-field-input"
+                                   placeholder="Ej. cajero03"
+                                   @bind="usuarioEditando.Username" />
+                        </div>
+
+                        <div>
+                            <label class="lk-field-label">Rol en el Sistema</label>
+                            <select class="lk-field-input" @bind="usuarioEditando.Rol" @bind:after="AlCambiarRolModal">
+                                <option value="@RolUsuario.Cajero">Cajero (Operación restringida a su local)</option>
+                                <option value="@RolUsuario.Admin">Administradora (Acceso maestro global)</option>
+                            </select>
+                        </div>
+
+                        @if (usuarioEditando.Rol == RolUsuario.Cajero)
+                        {
+                            <div>
+                                <label class="lk-field-label">Local Asignado</label>
+                                <select class="lk-field-input" @bind="sedeUsuarioSeleccionada">
+                                    @foreach (var s in sedes)
+                                    {
+                                        <option value="@s.Id">@s.Nombre</option>
+                                    }
+                                </select>
+                            </div>
+                        }
+
+                        @if (usuarioEditando.Id == 0)
+                        {
+                            <div>
+                                <label class="lk-field-label">Contraseña Inicial</label>
+                                <input type="password"
+                                       class="lk-field-input"
+                                       placeholder="••••••••"
+                                       @bind="claveTemporalInput" />
+                            </div>
+                        }
+
+                        <div class="lk-modal-footer">
+                            <button type="button" class="lk-btn-cancel" @onclick="CerrarModals">Cancelar</button>
+                            <button type="button" class="lk-btn-save-red" @onclick="GuardarUsuarioAsync">
+                                <i class="bi bi-check-lg"></i>
+                                <span>Guardar Usuario</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+
+        <!-- =========================================================
+             MODAL 3: CAMBIAR CONTRASEÑA DE USUARIO
+             ========================================================= -->
+        @if (mostrarModalClave && usuarioClaveTarget != null)
+        {
+            <div class="lk-modal-backdrop" @onclick="CerrarModals">
+                <div class="lk-modal-card" @onclick:stopPropagation="true">
+                    <div class="lk-modal-header">
+                        <div class="lk-modal-title">
+                            <i class="bi bi-key-fill"></i>
+                            <span>Actualizar Contraseña</span>
+                        </div>
+                        <button type="button" class="lk-modal-close" @onclick="CerrarModals">
+                            <i class="bi bi-x-lg"></i>
+                        </button>
+                    </div>
+
+                    <div class="lk-modal-body">
+                        <p class="lk-clave-desc">
+                            Asignando nueva clave de acceso para <strong>@usuarioClaveTarget.NombreCompleto</strong> (<code>@usuarioClaveTarget.Username</code>):
+                        </p>
+
+                        <div>
+                            <label class="lk-field-label">Nueva Contraseña</label>
+                            <input type="password"
+                                   class="lk-field-input"
+                                   placeholder="Mínimo 4 caracteres"
+                                   @bind="nuevaClaveReset" />
+                        </div>
+
+                        <div class="lk-modal-footer">
+                            <button type="button" class="lk-btn-cancel" @onclick="CerrarModals">Cancelar</button>
+                            <button type="button" class="lk-btn-save-blue" @onclick="ConfirmarCambioClave">
+                                <i class="bi bi-shield-check"></i>
+                                <span>Actualizar Clave</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    private List<SedeDto> sedes = new();
+    private List<UsuarioDto> usuarios = new();
+    private string? mensajeFeedback;
+
+    // Modal Sede
+    private bool mostrarModalSede;
+    private SedeDto sedeEditando = new();
+
+    // Modal Usuario
+    private bool mostrarModalUsuario;
+    private UsuarioDto usuarioEditando = new();
+    private int sedeUsuarioSeleccionada = 1;
+    private string claveTemporalInput = "";
+    private string? errorModalUsuario;
+
+    // Modal Contraseña
+    private bool mostrarModalClave;
+    private UsuarioDto? usuarioClaveTarget;
+    private string nuevaClaveReset = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        SessionService.OnChange += RefrescarVista;
+        if (SessionService.EsAdmin)
+        {
+            await CargarDatosAsync();
+        }
+    }
+
+    private void RefrescarVista() => InvokeAsync(StateHasChanged);
+
+    private async Task CargarDatosAsync()
+    {
+        sedes = await AdministracionService.ObtenerSedesAsync();
+        usuarios = await AdministracionService.ObtenerUsuariosAsync();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private string ObtenerEtiquetaSedeUsuario(UsuarioDto user)
+    {
+        if (user.Rol == RolUsuario.Admin || user.SedeId == null)
+            return "Todos los Locales";
+
+        var sede = sedes.FirstOrDefault(s => s.Id == user.SedeId);
+        if (sede != null) return sede.Nombre;
+
+        return user.SedeId == 1 ? "Local 2003" : "Local 2039";
+    }
+
+    // --- Gestión de Sedes ---
+    private void AbrirModalEditarSede(SedeDto sede)
+    {
+        sedeEditando = new SedeDto
+        {
+            Id = sede.Id,
+            Nombre = sede.Nombre,
+            Direccion = sede.Direccion,
+            Activa = sede.Activa
+        };
+        mostrarModalSede = true;
+    }
+
+    private async Task GuardarSedeAsync()
+    {
+        if (string.IsNullOrWhiteSpace(sedeEditando.Nombre)) return;
+
+        await AdministracionService.GuardarSedeAsync(sedeEditando);
+        mostrarModalSede = false;
+        mensajeFeedback = $"Datos de '{sedeEditando.Nombre}' actualizados correctamente.";
+        await CargarDatosAsync();
+    }
+
+    // --- Gestión de Usuarios ---
+    private void AbrirModalNuevoUsuario()
+    {
+        errorModalUsuario = null;
+        claveTemporalInput = "";
+        sedeUsuarioSeleccionada = sedes.FirstOrDefault()?.Id ?? 1;
+        usuarioEditando = new UsuarioDto
+        {
+            Rol = RolUsuario.Cajero,
+            SedeId = sedeUsuarioSeleccionada,
+            Activo = true
+        };
+        mostrarModalUsuario = true;
+    }
+
+    private void AbrirModalEditarUsuario(UsuarioDto user)
+    {
+        errorModalUsuario = null;
+        sedeUsuarioSeleccionada = user.SedeId ?? (sedes.FirstOrDefault()?.Id ?? 1);
+        usuarioEditando = new UsuarioDto
+        {
+            Id = user.Id,
+            NombreCompleto = user.NombreCompleto,
+            Username = user.Username,
+            Rol = user.Rol,
+            SedeId = user.SedeId,
+            NombreSede = user.NombreSede,
+            Activo = user.Activo
+        };
+        mostrarModalUsuario = true;
+    }
+
+    private void AlCambiarRolModal()
+    {
+        if (usuarioEditando.Rol == RolUsuario.Admin)
+        {
+            usuarioEditando.SedeId = null;
+            usuarioEditando.NombreSede = "Todos los Locales";
+        }
+        else
+        {
+            usuarioEditando.SedeId = sedeUsuarioSeleccionada;
+        }
+    }
+
+    private async Task GuardarUsuarioAsync()
+    {
+        errorModalUsuario = null;
+
+        if (string.IsNullOrWhiteSpace(usuarioEditando.NombreCompleto) || string.IsNullOrWhiteSpace(usuarioEditando.Username))
+        {
+            errorModalUsuario = "Completa el nombre completo y el nombre de usuario.";
+            return;
+        }
+
+        if (usuarioEditando.Id == 0 && string.IsNullOrWhiteSpace(claveTemporalInput))
+        {
+            errorModalUsuario = "Asigna una contraseña inicial para el nuevo usuario.";
+            return;
+        }
+
+        if (usuarioEditando.Rol == RolUsuario.Admin)
+        {
+            usuarioEditando.SedeId = null;
+            usuarioEditando.NombreSede = "Todos los Locales";
+        }
+        else
+        {
+            usuarioEditando.SedeId = sedeUsuarioSeleccionada;
+            usuarioEditando.NombreSede = sedes.FirstOrDefault(s => s.Id == sedeUsuarioSeleccionada)?.Nombre ?? "Local Asignado";
+        }
+
+        bool esNuevo = usuarioEditando.Id == 0;
+        await AdministracionService.GuardarUsuarioAsync(usuarioEditando);
+        mostrarModalUsuario = false;
+        mensajeFeedback = esNuevo
+            ? $"Usuario '{usuarioEditando.Username}' creado y vinculado a {usuarioEditando.NombreSede}."
+            : $"Permisos de '{usuarioEditando.NombreCompleto}' actualizados.";
+        await CargarDatosAsync();
+    }
+
+    private async Task AlternarEstadoUsuarioAsync(UsuarioDto user)
+    {
+        user.Activo = !user.Activo;
+        await AdministracionService.GuardarUsuarioAsync(user);
+        mensajeFeedback = user.Activo
+            ? $"Acceso reactivado para '{user.NombreCompleto}'."
+            : $"Acceso suspendido para '{user.NombreCompleto}'.";
+        await CargarDatosAsync();
+    }
+
+    // --- Modal Cambio de Clave ---
+    private void AbrirModalClave(UsuarioDto user)
+    {
+        usuarioClaveTarget = user;
+        nuevaClaveReset = "";
+        mostrarModalClave = true;
+    }
+
+    private void ConfirmarCambioClave()
+    {
+        if (usuarioClaveTarget == null || string.IsNullOrWhiteSpace(nuevaClaveReset)) return;
+        mostrarModalClave = false;
+        mensajeFeedback = $"Contraseña actualizada correctamente para '{usuarioClaveTarget.Username}'.";
+    }
+
+    private void CerrarModals()
+    {
+        mostrarModalSede = false;
+        mostrarModalUsuario = false;
+        mostrarModalClave = false;
+    }
+
+    public void Dispose() => SessionService.OnChange -= RefrescarVista;
+}
