@@ -1,0 +1,487 @@
+@page "/cierre-caja"
+@page "/cierrecaja"
+@implements IDisposable
+@using System.Globalization
+@using TecnologiaDigitalLK.Models
+@using TecnologiaDigitalLK.Services.Interfaces
+@inject IVentasService VentasService
+@inject ICierreCajaService CierreCajaService
+@inject IUserSessionService SessionService
+
+<PageTitle>Cierre Diario & Gastos - Tecnología Digital LK</PageTitle>
+
+<div class="lk-close-container">
+    <!-- 1. ENCABEZADO -->
+    <div class="lk-close-header">
+        <div class="lk-close-title-group">
+            <span class="lk-close-accent"></span>
+            <div>
+                <h1 class="lk-close-title">Cierre Diario & Gastos</h1>
+                <p class="lk-close-subtitle">
+                    Tecnología Digital LK • C.C. Sanandrexitos Piso 2, Locales 2003 y 2039, Ibagué
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. BARRA DE FILTROS: FECHA Y SEDE -->
+    <div class="lk-audit-bar">
+        <div class="lk-audit-group">
+            <div class="lk-audit-icon">
+                <i class="bi bi-calendar-event-fill"></i>
+            </div>
+            <label class="lk-audit-label" for="fechaCierre">Fecha:</label>
+            <input id="fechaCierre"
+                   type="date"
+                   class="lk-date-input"
+                   @bind="fechaSeleccionada"
+                   @bind:after="CargarDatosJornadaAsync" />
+        </div>
+
+        <div class="lk-audit-divider"></div>
+
+        <div class="lk-audit-group">
+            <div class="lk-audit-icon">
+                <i class="bi bi-geo-alt-fill"></i>
+            </div>
+            <span class="lk-audit-label">Sede:</span>
+
+            @if (SessionService.EsAdmin)
+            {
+                <div class="lk-sede-radios">
+                    <label class="lk-radio-pill @(sedeSeleccionadaId == null ? "selected" : "")"
+                           @onclick="() => CambiarSedeFiltroAsync(null)">
+                        <input type="radio" name="sedeFiltro" checked="@(sedeSeleccionadaId == null)" readonly />
+                        <span>Consolidado</span>
+                    </label>
+
+                    <label class="lk-radio-pill @(sedeSeleccionadaId == 1 ? "selected" : "")"
+                           @onclick="() => CambiarSedeFiltroAsync(1)">
+                        <input type="radio" name="sedeFiltro" checked="@(sedeSeleccionadaId == 1)" readonly />
+                        <span>Local 2003</span>
+                    </label>
+
+                    <label class="lk-radio-pill @(sedeSeleccionadaId == 2 ? "selected" : "")"
+                           @onclick="() => CambiarSedeFiltroAsync(2)">
+                        <input type="radio" name="sedeFiltro" checked="@(sedeSeleccionadaId == 2)" readonly />
+                        <span>Local 2039</span>
+                    </label>
+                </div>
+            }
+            else
+            {
+                <span class="lk-sede-locked">
+                    <i class="bi bi-lock-fill"></i>
+                    <span>@(sedeSeleccionadaId == 1 ? "Local 2003" : "Local 2039")</span>
+                </span>
+            }
+        </div>
+    </div>
+
+    <!-- NOTIFICACIÓN DE REGISTRO -->
+    @if (!string.IsNullOrEmpty(mensajeFeedback))
+    {
+        <div class="lk-close-toast">
+            <div class="lk-toast-left">
+                <i class="bi bi-check-circle-fill"></i>
+                <span>@mensajeFeedback</span>
+            </div>
+            <button type="button" @onclick="() => mensajeFeedback = null">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+    }
+
+    <!-- 3. FILA DE TARJETAS KPI DE CUADRE DIARIO -->
+    <div class="lk-close-kpi-grid @(SessionService.EsAdmin ? "cols-4" : "cols-3")">
+        <!-- KPI 1: Total Ingresado -->
+        <div class="lk-ckpi-card border-blue">
+            <div class="lk-ckpi-icon bg-navy">
+                <i class="bi bi-currency-dollar"></i>
+            </div>
+            <div class="lk-ckpi-body">
+                <div class="lk-ckpi-label">Total Ingresado</div>
+                <div class="lk-ckpi-value val-blue">@FormatearCop(TotalIngresado)</div>
+                <div class="lk-ckpi-sub">
+                    Efec: @FormatearCop(TotalEfectivo) • Nequi: @FormatearCop(TotalNequi) • Tarj: @FormatearCop(TotalTarjeta)
+                </div>
+            </div>
+        </div>
+
+        <!-- KPI 2: Ítems Vendidos -->
+        <div class="lk-ckpi-card border-navy">
+            <div class="lk-ckpi-icon bg-navy">
+                <i class="bi bi-cart-fill"></i>
+            </div>
+            <div class="lk-ckpi-body">
+                <div class="lk-ckpi-label">Ítems Vendidos</div>
+                <div class="lk-ckpi-value val-navy">@TotalItemsVendidos uds</div>
+                <div class="lk-ckpi-sub">@ventasJornada.Count factura(s) emitida(s)</div>
+            </div>
+        </div>
+
+        <!-- KPI 3: Gastos Operativos -->
+        <div class="lk-ckpi-card border-red">
+            <div class="lk-ckpi-icon bg-red">
+                <i class="bi bi-wallet2"></i>
+            </div>
+            <div class="lk-ckpi-body">
+                <div class="lk-ckpi-label">Gastos Operativos</div>
+                <div class="lk-ckpi-value val-red">@FormatearCop(TotalGastosOperativos)</div>
+                <div class="lk-ckpi-sub">@gastosJornada.Count egreso(s) en caja</div>
+            </div>
+        </div>
+
+        <!-- KPI 4: Ganancia Neta Real (Exclusivo Admin) -->
+        @if (SessionService.EsAdmin)
+        {
+            <div class="lk-ckpi-card border-green">
+                <div class="lk-ckpi-icon bg-green">
+                    <i class="bi bi-graph-up-arrow"></i>
+                </div>
+                <div class="lk-ckpi-body">
+                    <div class="lk-ckpi-label">Ganancia Neta Real</div>
+                    <div class="lk-ckpi-value val-green">@FormatearCop(GananciaNetaReal)</div>
+                    <div class="lk-ckpi-sub">Utilidad ventas menos gastos</div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- 4. SECCIÓN MEDIA: REGISTRAR GASTO OPERATIVO + GASTOS DEL DÍA -->
+    <div class="lk-expenses-grid">
+        <!-- Izquierda: Formulario Rápido de Gastos -->
+        <div class="lk-panel-card">
+            <div class="lk-panel-header">
+                <i class="bi bi-wallet-fill"></i>
+                <span>Registrar Gasto Operativo</span>
+            </div>
+
+            <div class="lk-panel-body">
+                @if (!string.IsNullOrEmpty(errorFormularioGasto))
+                {
+                    <div class="lk-form-error">
+                        <i class="bi bi-exclamation-circle-fill"></i>
+                        <span>@errorFormularioGasto</span>
+                    </div>
+                }
+
+                @if (SessionService.EsAdmin && sedeSeleccionadaId == null)
+                {
+                    <div class="lk-form-row">
+                        <label class="lk-form-label">Local:</label>
+                        <select class="lk-form-control" @bind="sedeNuevoGastoId">
+                            <option value="1">Local 2003</option>
+                            <option value="2">Local 2039</option>
+                        </select>
+                    </div>
+                }
+
+                <div class="lk-form-row">
+                    <label class="lk-form-label">Concepto:</label>
+                    <input type="text"
+                           class="lk-form-control"
+                           placeholder="Ej. Domicilio envío tablet"
+                           @bind="nuevoGastoConcepto" />
+                </div>
+
+                <div class="lk-form-row">
+                    <label class="lk-form-label">Categoría:</label>
+                    <select class="lk-form-control" @bind="nuevoGastoCategoria">
+                        <option value="">Selecciona una categoría</option>
+                        <option value="Domicilios">Domicilios</option>
+                        <option value="Insumos">Insumos</option>
+                        <option value="Cafetería">Cafetería</option>
+                        <option value="Servicios">Servicios</option>
+                        <option value="Mantenimiento">Mantenimiento</option>
+                    </select>
+                </div>
+
+                <div class="lk-form-row">
+                    <label class="lk-form-label">Monto ($):</label>
+                    <div class="lk-money-input-group">
+                        <span class="lk-money-prefix">$</span>
+                        <input type="number"
+                               min="0"
+                               step="500"
+                               class="lk-money-field"
+                               placeholder="Ingrese el monto"
+                               @bind="nuevoGastoMonto" />
+                    </div>
+                </div>
+
+                <div class="lk-form-submit-wrap">
+                    <button type="button"
+                            class="lk-btn-register-expense"
+                            disabled="@registrandoGasto"
+                            @onclick="GuardarGastoOperativoAsync">
+                        <i class="bi bi-floppy2-fill"></i>
+                        <span>@(registrandoGasto ? "Guardando..." : "Registrar Gasto")</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Derecha: Lista de Gastos del Día -->
+        <div class="lk-panel-card">
+            <div class="lk-panel-header">
+                <i class="bi bi-card-list"></i>
+                <span>Gastos del Día (@fechaSeleccionada.ToString("dd/MM/yyyy"))</span>
+            </div>
+
+            <div class="lk-table-scroll">
+                <table class="lk-sub-table">
+                    <thead>
+                        <tr>
+                            <th class="text-center">#</th>
+                            <th>Concepto</th>
+                            <th>Categoría</th>
+                            <th>Local</th>
+                            <th class="text-right">Monto</th>
+                            <th class="text-center">Fecha</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (!gastosJornada.Any())
+                        {
+                            <tr>
+                                <td colspan="6" class="lk-empty-cell">
+                                    No hay gastos operativos registrados para esta fecha y sede.
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            int indice = 1;
+                            @foreach (var gasto in gastosJornada)
+                            {
+                                <tr>
+                                    <td class="text-center fw-bold">@(indice++)</td>
+                                    <td class="fw-semibold text-dark">@gasto.Concepto</td>
+                                    <td>
+                                        <span class="lk-cat-tag">@gasto.CategoriaGasto</span>
+                                    </td>
+                                    <td>@(gasto.SedeId == 1 ? "Local 2003" : "Local 2039")</td>
+                                    <td class="text-right lk-amount-red">@FormatearCop(gasto.Monto)</td>
+                                    <td class="text-center text-muted">@gasto.Fecha.ToString("dd/MM/yyyy")</td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- 5. TABLA INFERIOR: HISTÓRICO AUDITABLE DE VENTAS -->
+    <div class="lk-panel-card">
+        <div class="lk-panel-header">
+            <i class="bi bi-bar-chart-fill"></i>
+            <span>Histórico Auditable de Ventas</span>
+        </div>
+
+        <div class="lk-table-scroll">
+            <table class="lk-history-table">
+                <thead>
+                    <tr>
+                        <th>Factura</th>
+                        <th class="text-center">Hora</th>
+                        <th class="text-center">Local</th>
+                        <th>Cajero</th>
+                        <th class="text-center">Método de Pago</th>
+                        <th class="text-right">Total Venta</th>
+                        @if (SessionService.EsAdmin)
+                        {
+                            <th class="text-right">Ganancia Neta</th>
+                        }
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!ventasJornada.Any())
+                    {
+                        <tr>
+                            <td colspan="@(SessionService.EsAdmin ? 7 : 6)" class="lk-empty-cell">
+                                No se registraron facturas de venta en la fecha y sede seleccionadas.
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var venta in ventasJornada.OrderByDescending(v => v.Fecha))
+                        {
+                            <tr>
+                                <td class="lk-invoice-code">@venta.NumeroFactura</td>
+                                <td class="text-center">@venta.Fecha.ToString("hh:mm tt")</td>
+                                <td class="text-center">
+                                    <span class="lk-sede-tag @(venta.SedeId == 1 ? "tag-2003" : "tag-2039")">
+                                        @(venta.SedeId == 1 ? "Local 2003" : "Local 2039")
+                                    </span>
+                                </td>
+                                <td class="fw-semibold">@venta.CajeroNombre</td>
+                                <td class="text-center">
+                                    <span class="lk-pay-tag">@venta.MetodoPago</span>
+                                </td>
+                                <td class="text-right lk-amount-navy">@FormatearCop(venta.TotalVenta)</td>
+                                @if (SessionService.EsAdmin)
+                                {
+                                    <td class="text-right lk-amount-green">@FormatearCop(venta.GananciaNetaTotal)</td>
+                                }
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@code {
+    private readonly CultureInfo culturaCo = new("es-CO");
+
+    private DateTime fechaSeleccionada = DateTime.Today;
+    private int? sedeSeleccionadaId = null; // null = Consolidado, 1 = Local 2003, 2 = Local 2039
+
+    private List<VentaDto> ventasJornada = new();
+    private List<GastoOperativoDto> gastosJornada = new();
+
+    // Formulario de Gastos
+    private int sedeNuevoGastoId = 1;
+    private string nuevoGastoConcepto = "";
+    private string nuevoGastoCategoria = "";
+    private decimal? nuevoGastoMonto;
+    private string? errorFormularioGasto;
+    private string? mensajeFeedback;
+    private bool registrandoGasto;
+
+    protected override async Task OnInitializedAsync()
+    {
+        SincronizarPermisosSede();
+        SessionService.OnChange += AlCambiarSesion;
+        VentasService.OnVentasChanged += AlCambiarDatosExternos;
+        CierreCajaService.OnGastosChanged += AlCambiarDatosExternos;
+
+        await CargarDatosJornadaAsync();
+    }
+
+    private void SincronizarPermisosSede()
+    {
+        if (!SessionService.EsAdmin)
+        {
+            sedeSeleccionadaId = SessionService.UsuarioActual?.SedeId ?? 1;
+            sedeNuevoGastoId = sedeSeleccionadaId.Value;
+        }
+        else if (SessionService.SedeFiltroId != null)
+        {
+            sedeSeleccionadaId = SessionService.SedeFiltroId;
+            sedeNuevoGastoId = sedeSeleccionadaId.Value;
+        }
+    }
+
+    private void AlCambiarSesion()
+    {
+        SincronizarPermisosSede();
+        _ = CargarDatosJornadaAsync();
+    }
+
+    private void AlCambiarDatosExternos() => _ = CargarDatosJornadaAsync();
+
+    private async Task CambiarSedeFiltroAsync(int? nuevaSedeId)
+    {
+        if (!SessionService.EsAdmin) return;
+        sedeSeleccionadaId = nuevaSedeId;
+        if (nuevaSedeId.HasValue)
+        {
+            sedeNuevoGastoId = nuevaSedeId.Value;
+        }
+        await CargarDatosJornadaAsync();
+    }
+
+    private async Task CargarDatosJornadaAsync()
+    {
+        ventasJornada = await VentasService.ObtenerVentasAsync(fechaSeleccionada, sedeSeleccionadaId);
+        gastosJornada = await CierreCajaService.ObtenerGastosAsync(fechaSeleccionada, sedeSeleccionadaId);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private string FormatearCop(decimal valor) =>
+        "$" + valor.ToString("#,##0", culturaCo);
+
+    // Métricas Calculadas del Cuadre Diario
+    private decimal TotalIngresado => ventasJornada.Sum(v => v.TotalVenta);
+
+    private decimal TotalEfectivo => ventasJornada
+        .Where(v => v.MetodoPago.Equals("Efectivo", StringComparison.OrdinalIgnoreCase))
+        .Sum(v => v.TotalVenta);
+
+    private decimal TotalNequi => ventasJornada
+        .Where(v => v.MetodoPago.Equals("Nequi", StringComparison.OrdinalIgnoreCase))
+        .Sum(v => v.TotalVenta);
+
+    private decimal TotalTarjeta => ventasJornada
+        .Where(v => v.MetodoPago.Equals("Tarjeta", StringComparison.OrdinalIgnoreCase))
+        .Sum(v => v.TotalVenta);
+
+    private int TotalItemsVendidos => ventasJornada.Sum(v =>
+        v.Detalles != null && v.Detalles.Any() ? v.Detalles.Sum(d => d.Cantidad) : 1);
+
+    private decimal TotalGastosOperativos => gastosJornada.Sum(g => g.Monto);
+
+    private decimal GananciaNetaReal =>
+        ventasJornada.Sum(v => v.GananciaNetaTotal) - TotalGastosOperativos;
+
+    private async Task GuardarGastoOperativoAsync()
+    {
+        errorFormularioGasto = null;
+
+        if (string.IsNullOrWhiteSpace(nuevoGastoConcepto))
+        {
+            errorFormularioGasto = "Escribe el concepto del gasto operativo.";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(nuevoGastoCategoria))
+        {
+            errorFormularioGasto = "Selecciona una categoría de gasto.";
+            return;
+        }
+
+        if (nuevoGastoMonto is null || nuevoGastoMonto <= 0)
+        {
+            errorFormularioGasto = "Ingresa un monto válido mayor a $0.";
+            return;
+        }
+
+        registrandoGasto = true;
+
+        int sedeDestinoId = sedeSeleccionadaId ?? sedeNuevoGastoId;
+        string nombreSede = sedeDestinoId == 1 ? "Local 2003" : "Local 2039";
+
+        var gasto = new GastoOperativoDto
+        {
+            Fecha = fechaSeleccionada.Date.Add(DateTime.Now.TimeOfDay),
+            SedeId = sedeDestinoId,
+            SedeNombre = nombreSede,
+            Concepto = nuevoGastoConcepto.Trim(),
+            CategoriaGasto = nuevoGastoCategoria,
+            Monto = nuevoGastoMonto.Value,
+            RegistradoPor = SessionService.UsuarioActual?.NombreCompleto ?? "Administración"
+        };
+
+        await CierreCajaService.RegistrarGastoAsync(gasto);
+
+        nuevoGastoConcepto = "";
+        nuevoGastoCategoria = "";
+        nuevoGastoMonto = null;
+        registrandoGasto = false;
+        mensajeFeedback = $"Gasto registrado por {FormatearCop(gasto.Monto)} en {nombreSede}.";
+
+        await CargarDatosJornadaAsync();
+    }
+
+    public void Dispose()
+    {
+        SessionService.OnChange -= AlCambiarSesion;
+        VentasService.OnVentasChanged -= AlCambiarDatosExternos;
+        CierreCajaService.OnGastosChanged -= AlCambiarDatosExternos;
+    }
+}

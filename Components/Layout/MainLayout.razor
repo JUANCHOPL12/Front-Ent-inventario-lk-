@@ -1,23 +1,146 @@
 ﻿@inherits LayoutComponentBase
+@implements IDisposable
+@using TecnologiaDigitalLK.Models
+@using TecnologiaDigitalLK.Services.Interfaces
+@using TecnologiaDigitalLK.Components.Pages
+@inject IUserSessionService SessionService
+@inject NavigationManager Nav
 
-<div class="page">
-    <div class="sidebar">
-        <NavMenu />
-    </div>
+@if (!SessionService.EstaAutenticado)
+{
+    <!-- Sin sesión activa: muestra el Login en pantalla completa (100% sin marcos) -->
+    <Login />
+}
+else
+{
+    <!-- Con sesión activa: entorno principal de Tecnología Digital LK -->
+    <div class="lk-app-shell">
+        <!-- MENÚ LATERAL (SIDEBAR) -->
+        <aside class="lk-sidebar">
+            <div class="lk-sidebar-brand">
+                <div class="lk-brand-badge">LK</div>
+                <div>
+                    <div class="lk-brand-title">TECNOLOGÍA DIGITAL</div>
+                    <div class="lk-brand-sub">C.C. Sanandrexitos • Ibagué</div>
+                </div>
+            </div>
 
-    <main>
-        <div class="top-row px-4">
-            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
+            <nav class="lk-nav-menu">
+                @if (SessionService.EsAdmin)
+                {
+                    <div class="lk-nav-section">GERENCIA</div>
+                    <NavLink class="lk-nav-item" href="" Match="NavLinkMatch.All">
+                        <i class="bi bi-speedometer2"></i>
+                        <span>Dashboard Gerencial</span>
+                    </NavLink>
+                }
+
+                <div class="lk-nav-section">OPERACIÓN DIARIA</div>
+                <NavLink class="lk-nav-item" href="pos">
+                    <i class="bi bi-cart-check-fill"></i>
+                    <span>Punto de Venta (POS)</span>
+                </NavLink>
+
+                <NavLink class="lk-nav-item" href="inventario">
+                    <i class="bi bi-boxes"></i>
+                    <span>Inventario & Traslados</span>
+                </NavLink>
+
+                <NavLink class="lk-nav-item" href="cierre-caja">
+                    <i class="bi bi-cash-coin"></i>
+                    <span>Cierre Diario & Gastos</span>
+                </NavLink>
+
+                @if (SessionService.EsAdmin)
+                {
+                    <div class="lk-nav-section">CONFIGURACIÓN</div>
+                    <NavLink class="lk-nav-item" href="administracion">
+                        <i class="bi bi-people-fill"></i>
+                        <span>Usuarios y Locales</span>
+                    </NavLink>
+                }
+            </nav>
+
+            <!-- Perfil activo y cierre de sesión -->
+            <div class="lk-sidebar-footer">
+                <div class="lk-user-card">
+                    <div class="lk-user-avatar">
+                        <i class="bi @(SessionService.EsAdmin ? "bi-shield-lock-fill" : "bi-person-badge-fill")"></i>
+                    </div>
+                    <div class="lk-user-info">
+                        <div class="lk-user-name">@SessionService.UsuarioActual?.NombreCompleto</div>
+                        <span class="lk-role-pill @(SessionService.EsAdmin ? "admin" : "cajero")">
+                            @(SessionService.EsAdmin
+                                ? "Administradora"
+                                : $"Cajero • Local {(SessionService.UsuarioActual?.SedeId == 1 ? "2003" : "2039")}")
+                        </span>
+                    </div>
+                </div>
+
+                <button type="button" class="lk-logout-btn" @onclick="CerrarSesion">
+                    <i class="bi bi-box-arrow-left"></i>
+                    <span>Cerrar Sesión / Cambiar Rol</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- ÁREA DERECHA: BARRA SUPERIOR MULTI-SEDE + CONTENIDO -->
+        <div class="lk-main-area">
+            <header class="lk-topbar">
+                <div class="lk-sede-indicator">
+                    <i class="bi bi-geo-alt-fill text-danger"></i>
+                    <span>Vista Activa:</span>
+                    <strong>@SessionService.NombreVistaActual</strong>
+                </div>
+
+                @if (SessionService.EsAdmin)
+                {
+                    <!-- Selector global exclusivo para Luz Karime -->
+                    <div class="lk-sede-switcher">
+                        <span class="lk-switcher-label">Filtrar Sede:</span>
+                        <div class="btn-group btn-group-sm" role="group">
+                            <button type="button"
+                                    class="btn @(SessionService.SedeFiltroId == null ? "btn-primary" : "btn-outline-primary")"
+                                    @onclick="() => SessionService.CambiarFiltroSedeAdmin(null)">
+                                Consolidado
+                            </button>
+                            <button type="button"
+                                    class="btn @(SessionService.SedeFiltroId == 1 ? "btn-primary" : "btn-outline-primary")"
+                                    @onclick="() => SessionService.CambiarFiltroSedeAdmin(1)">
+                                Local 2003
+                            </button>
+                            <button type="button"
+                                    class="btn @(SessionService.SedeFiltroId == 2 ? "btn-primary" : "btn-outline-primary")"
+                                    @onclick="() => SessionService.CambiarFiltroSedeAdmin(2)">
+                                Local 2039
+                            </button>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="lk-locked-badge">
+                        <i class="bi bi-lock-fill"></i>
+                        <span>Operación restringida a sucursal asignada</span>
+                    </div>
+                }
+            </header>
+
+            <main class="lk-content-body">
+                @Body
+            </main>
         </div>
+    </div>
+}
 
-        <article class="content px-4">
-            @Body
-        </article>
-    </main>
-</div>
+@code {
+    protected override void OnInitialized() => SessionService.OnChange += StateHasChanged;
 
-<div id="blazor-error-ui" data-nosnippet>
-    An unhandled error has occurred.
-    <a href="." class="reload">Reload</a>
-    <span class="dismiss">🗙</span>
-</div>
+    private void CerrarSesion()
+    {
+        SessionService.Logout();
+        Nav.NavigateTo("/");
+    }
+
+    public void Dispose() => SessionService.OnChange -= StateHasChanged;
+}

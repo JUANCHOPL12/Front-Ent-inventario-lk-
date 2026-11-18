@@ -1,0 +1,731 @@
+@page "/inventario"
+@implements IDisposable
+@using System.Globalization
+@using TecnologiaDigitalLK.Models
+@using TecnologiaDigitalLK.Services.Interfaces
+@inject IInventarioService InventarioService
+@inject IUserSessionService SessionService
+
+<PageTitle>Inventario & Traslados - Tecnología Digital LK</PageTitle>
+
+<div class="lk-inv-container">
+    <!-- 1. ENCABEZADO Y BOTONES DE ACCIÓN -->
+    <div class="lk-inv-header">
+        <div class="lk-inv-title-group">
+            <span class="lk-inv-accent"></span>
+            <div>
+                <h1 class="lk-inv-title">Inventario & Traslados</h1>
+                <p class="lk-inv-subtitle">
+                    Tecnología Digital LK • C.C. Sanandrexitos Piso 2, Locales 2003 y 2039, Ibagué
+                    @if (!SessionService.EsAdmin)
+                    {
+                        <span class="lk-role-notice"> • Vista Operativa (Solo Consulta de Stock)</span>
+                    }
+                </p>
+            </div>
+        </div>
+
+        @if (SessionService.EsAdmin)
+        {
+            <div class="lk-inv-actions">
+                <button type="button" class="lk-btn-blue" @onclick="() => AbrirModalTraslado(null)">
+                    <i class="bi bi-arrow-left-right"></i>
+                    <span>Trasladar Stock</span>
+                </button>
+                <button type="button" class="lk-btn-red" @onclick="AbrirModalNuevoProducto">
+                    <i class="bi bi-plus-lg"></i>
+                    <span>Nuevo Producto</span>
+                </button>
+            </div>
+        }
+    </div>
+
+    <!-- NOTIFICACIÓN DE CONFIRMACIÓN -->
+    @if (!string.IsNullOrEmpty(mensajeFeedback))
+    {
+        <div class="lk-toast @(esFeedbackError ? "toast-error" : "toast-success")">
+            <div class="lk-toast-content">
+                <i class="bi @(esFeedbackError ? "bi-exclamation-triangle-fill" : "bi-check-circle-fill")"></i>
+                <span>@mensajeFeedback</span>
+            </div>
+            <button type="button" class="lk-toast-close" @onclick="() => mensajeFeedback = null">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+    }
+
+    <!-- 2. BARRA DE FILTROS RÁPIDOS -->
+    <div class="lk-filter-bar">
+        <div class="lk-search-box">
+            <i class="bi bi-search"></i>
+            <input type="text"
+                   class="lk-search-input"
+                   placeholder="Buscar producto o código (ej. Vidrio, Mouse, Teclado)..."
+                   @bind="textoBusqueda"
+                   @bind:event="oninput"
+                   @onkeyup="ReiniciarPaginacion" />
+            @if (!string.IsNullOrEmpty(textoBusqueda))
+            {
+                <button type="button" class="lk-clear-search" @onclick="LimpiarBusqueda">
+                    <i class="bi bi-x-circle-fill"></i>
+                </button>
+            }
+        </div>
+
+        <div class="lk-category-box">
+            <i class="bi bi-grid-fill"></i>
+            <select class="lk-category-select" @bind="categoriaIdSeleccionada" @bind:after="ReiniciarPaginacion">
+                <option value="0">Todas las categorías</option>
+                @foreach (var cat in categorias.Where(c => c.Activa))
+                {
+                    <option value="@cat.Id">@cat.Nombre</option>
+                }
+            </select>
+        </div>
+
+        <div class="lk-status-switch">
+            <button type="button"
+                    class="lk-switch-btn @(mostrarActivos ? "active" : "")"
+                    @onclick="() => CambiarFiltroEstado(true)">
+                @if (mostrarActivos)
+                {
+                    <i class="bi bi-check-lg"></i>
+                }
+                <span>Activos (@TotalActivos)</span>
+            </button>
+            <button type="button"
+                    class="lk-switch-btn @(!mostrarActivos ? "active-inactive" : "")"
+                    @onclick="() => CambiarFiltroEstado(false)">
+                <span>Inactivos (@TotalInactivos)</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- 3. TABLA DISTRIBUIDA DE PRODUCTOS -->
+    <div class="lk-table-card">
+        <div class="lk-table-responsive">
+            <table class="lk-table">
+                <thead>
+                    <tr>
+                        <th class="col-product">Producto</th>
+                        <th class="text-center @(SessionService.SedeFiltroId == 2 ? "col-dimmed" : "")">
+                            Stock<br />Local 2003
+                        </th>
+                        <th class="text-center @(SessionService.SedeFiltroId == 1 ? "col-dimmed" : "")">
+                            Stock<br />Local 2039
+                        </th>
+                        <th class="text-center">Total</th>
+
+                        @if (SessionService.EsAdmin)
+                        {
+                            <th class="text-center">Costo Base</th>
+                        }
+
+                        <th class="text-center">
+                            Precio Detal
+                            @if (SessionService.EsAdmin)
+                            {
+                                <span class="th-badge badge-green">Margen</span>
+                            }
+                        </th>
+                        <th class="text-center">
+                            Precio Por Mayor
+                            @if (SessionService.EsAdmin)
+                            {
+                                <span class="th-badge badge-blue">Margen</span>
+                            }
+                        </th>
+                        <th class="text-center">Estado</th>
+
+                        @if (SessionService.EsAdmin)
+                        {
+                            <th class="text-center">Acciones</th>
+                        }
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (!ProductosPaginados.Any())
+                    {
+                        <tr>
+                            <td colspan="@(SessionService.EsAdmin ? 9 : 7)" class="lk-empty-row">
+                                <i class="bi bi-inbox"></i>
+                                <p>No se encontraron productos con los filtros seleccionados.</p>
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var prod in ProductosPaginados)
+                        {
+                            bool esStockCritico = prod.Activo && (prod.StockLocal1 <= prod.StockMinimo || prod.StockLocal2 <= prod.StockMinimo);
+                            bool esBajaRotacion = prod.Activo && prod.DiasSinMovimiento >= 30;
+
+                            <tr class="@(!prod.Activo ? "row-inactive" : "")">
+                                <!-- Producto -->
+                                <td>
+                                    <div class="lk-prod-cell">
+                                        @if (!string.IsNullOrWhiteSpace(prod.ImagenUrl))
+                                        {
+                                            <img src="@prod.ImagenUrl" alt="@prod.Nombre" class="lk-prod-img" />
+                                        }
+                                        else
+                                        {
+                                            <div class="lk-prod-thumb">
+                                                <i class="bi bi-box-seam-fill"></i>
+                                            </div>
+                                        }
+                                        <div>
+                                            <div class="lk-prod-name">
+                                                @prod.Nombre
+                                                @if (esStockCritico)
+                                                {
+                                                    <span class="lk-mini-alert alert-crit" title="Stock en nivel mínimo">
+                                                        <i class="bi bi-exclamation-triangle-fill"></i> Bajo
+                                                    </span>
+                                                }
+                                                @if (esBajaRotacion)
+                                                {
+                                                    <span class="lk-mini-alert alert-slow" title="@prod.DiasSinMovimiento días sin venta">
+                                                        <i class="bi bi-clock-fill"></i> @prod.DiasSinMovimiento d
+                                                    </span>
+                                                }
+                                            </div>
+                                            <div class="lk-prod-cat">
+                                                @ObtenerNombreCategoria(prod)
+                                                @if (!string.IsNullOrWhiteSpace(prod.Codigo))
+                                                {
+                                                    <span> • <span class="lk-sku">@prod.Codigo</span></span>
+                                                }
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+
+                                <!-- Stock Local 2003 (Local 1) -->
+                                <td class="text-center @(SessionService.SedeFiltroId == 2 ? "col-dimmed" : "")">
+                                    <span class="lk-stock-num @(prod.Activo && prod.StockLocal1 <= prod.StockMinimo ? "stock-low" : "")">
+                                        @prod.StockLocal1
+                                    </span>
+                                </td>
+
+                                <!-- Stock Local 2039 (Local 2) -->
+                                <td class="text-center @(SessionService.SedeFiltroId == 1 ? "col-dimmed" : "")">
+                                    <span class="lk-stock-num @(prod.Activo && prod.StockLocal2 <= prod.StockMinimo ? "stock-low" : "")">
+                                        @prod.StockLocal2
+                                    </span>
+                                </td>
+
+                                <!-- Total Consolidado -->
+                                <td class="text-center">
+                                    <span class="lk-stock-total">@prod.StockTotal</span>
+                                </td>
+
+                                <!-- Costo Base (Solo Admin) -->
+                                @if (SessionService.EsAdmin)
+                                {
+                                    <td class="text-center">
+                                        <span class="lk-money-cost">@FormatearCop(prod.CostoAdquisicion)</span>
+                                    </td>
+                                }
+
+                                <!-- Precio Detal + Margen Automático -->
+                                <td class="text-center">
+                                    <div class="lk-price-stack">
+                                        <span class="lk-money-price">@FormatearCop(prod.PrecioDetal)</span>
+                                        @if (SessionService.EsAdmin)
+                                        {
+                                            <span class="lk-margin-pill margin-detal">+@prod.MargenDetalPorcentaje%</span>
+                                        }
+                                    </div>
+                                </td>
+
+                                <!-- Precio Por Mayor + Margen Automático -->
+                                <td class="text-center">
+                                    <div class="lk-price-stack">
+                                        <span class="lk-money-price">@FormatearCop(prod.PrecioPorMayor)</span>
+                                        @if (SessionService.EsAdmin)
+                                        {
+                                            <span class="lk-margin-pill margin-mayor">+@prod.MargenMayorPorcentaje%</span>
+                                        }
+                                    </div>
+                                </td>
+
+                                <!-- Estado Activo / Inactivo -->
+                                <td class="text-center">
+                                    @if (prod.Activo)
+                                    {
+                                        <span class="lk-state-pill state-active">
+                                            <span class="dot"></span> Activo
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="lk-state-pill state-inactive">
+                                            <span class="dot"></span> Inactivo
+                                        </span>
+                                    }
+                                </td>
+
+                                <!-- Acciones (Solo Admin) -->
+                                @if (SessionService.EsAdmin)
+                                {
+                                    <td class="text-center">
+                                        <div class="lk-row-actions">
+                                            <button type="button"
+                                                    class="lk-act-btn act-blue"
+                                                    title="Trasladar entre locales"
+                                                    disabled="@(!prod.Activo)"
+                                                    @onclick="() => AbrirModalTraslado(prod)">
+                                                <i class="bi bi-arrow-left-right"></i>
+                                            </button>
+                                            <button type="button"
+                                                    class="lk-act-btn act-blue"
+                                                    title="Editar ficha técnica y precios"
+                                                    @onclick="() => AbrirModalEditarProducto(prod)">
+                                                <i class="bi bi-pencil-fill"></i>
+                                            </button>
+                                            <button type="button"
+                                                    class="lk-act-btn @(prod.Activo ? "act-red" : "act-green")"
+                                                    title="@(prod.Activo ? "Desactivar producto (Borrado Lógico)" : "Reactivar producto")"
+                                                    @onclick="() => AlternarEstadoProductoAsync(prod)">
+                                                <i class="bi bi-power"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                }
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <!-- PIE DE TABLA Y PAGINACIÓN -->
+        <div class="lk-table-footer">
+            <span class="lk-page-summary">
+                Mostrando @ProductosPaginados.Count de @ProductosFiltrados.Count productos
+            </span>
+
+            @if (TotalPaginas > 1)
+            {
+                <div class="lk-pagination">
+                    @for (int i = 1; i <= TotalPaginas; i++)
+                    {
+                        int numPagina = i;
+                        <button type="button"
+                                class="lk-page-btn @(paginaActual == numPagina ? "active" : "")"
+                                @onclick="() => paginaActual = numPagina">
+                            @numPagina
+                        </button>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- =========================================================
+         MODAL 1: TRASLADO ENTRE LOCALES
+         ========================================================= -->
+    @if (mostrarModalTraslado && SessionService.EsAdmin)
+    {
+        <div class="lk-modal-backdrop" @onclick="CerrarModals">
+            <div class="lk-modal-card" @onclick:stopPropagation="true">
+                <div class="lk-modal-header">
+                    <div class="lk-modal-title">
+                        <i class="bi bi-arrow-left-right"></i>
+                        <span>Traslado entre Locales</span>
+                    </div>
+                    <button type="button" class="lk-modal-close" @onclick="CerrarModals">
+                        <i class="bi bi-x-lg"></i>
+                    </button>
+                </div>
+
+                <div class="lk-modal-body">
+                    @if (!string.IsNullOrEmpty(errorModalTraslado))
+                    {
+                        <div class="lk-modal-alert">
+                            <i class="bi bi-exclamation-circle-fill"></i>
+                            <span>@errorModalTraslado</span>
+                        </div>
+                    }
+
+                    <!-- Selector de Producto -->
+                    <div>
+                        <label class="lk-field-label">Producto a trasladar</label>
+                        <select class="lk-field-select" @bind="trasladoProductoId" @bind:after="ActualizarMaxTraslado">
+                            @foreach (var p in productos.Where(x => x.Activo))
+                            {
+                                <option value="@p.Id">@p.Nombre (Local 2003: @p.StockLocal1 uds | Local 2039: @p.StockLocal2 uds)</option>
+                            }
+                        </select>
+                    </div>
+
+                    <!-- Origen -> Destino -> Cantidad -->
+                    <div class="lk-transfer-grid">
+                        <div class="lk-transfer-icon">
+                            <i class="bi bi-box-seam-fill"></i>
+                        </div>
+
+                        <div>
+                            <label class="lk-field-label">Origen</label>
+                            <select class="lk-field-select" @bind="trasladoOrigenId" @bind:after="SincronizarDestino">
+                                <option value="1">Local 2003 (@(ProductoTrasladoActual?.StockLocal1 ?? 0) uds)</option>
+                                <option value="2">Local 2039 (@(ProductoTrasladoActual?.StockLocal2 ?? 0) uds)</option>
+                            </select>
+                        </div>
+
+                        <div class="lk-transfer-arrow">
+                            <i class="bi bi-arrow-right"></i>
+                        </div>
+
+                        <div>
+                            <label class="lk-field-label">Destino</label>
+                            <select class="lk-field-select" @bind="trasladoDestinoId">
+                                <option value="1">Local 2003 (@(ProductoTrasladoActual?.StockLocal1 ?? 0) uds)</option>
+                                <option value="2">Local 2039 (@(ProductoTrasladoActual?.StockLocal2 ?? 0) uds)</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="lk-field-label">Cantidad</label>
+                            <div class="lk-qty-box">
+                                <input type="number" min="1" max="@StockDisponibleOrigen" class="lk-qty-input" @bind="trasladoCantidad" />
+                                <span class="lk-qty-unit">uds</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="lk-field-label">Observación (Opcional)</label>
+                        <input type="text"
+                               class="lk-field-input"
+                               placeholder="Ej. Reposición vitrina Local 2039"
+                               @bind="trasladoObservacion" />
+                    </div>
+
+                    <button type="button" class="lk-btn-confirm-transfer" @onclick="EjecutarTrasladoAsync">
+                        <i class="bi bi-check-lg"></i>
+                        <span>Confirmar Traslado</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- =========================================================
+         MODAL 2: FICHA TÉCNICA (NUEVO / EDITAR PRODUCTO)
+         ========================================================= -->
+    @if (mostrarModalProducto && SessionService.EsAdmin)
+    {
+        <div class="lk-modal-backdrop" @onclick="CerrarModals">
+            <div class="lk-modal-card modal-wide" @onclick:stopPropagation="true">
+                <div class="lk-modal-header">
+                    <div class="lk-modal-title">
+                        <i class="bi @(productoEditando.Id == 0 ? "bi-plus-circle-fill" : "bi-pencil-square")"></i>
+                        <span>@(productoEditando.Id == 0 ? "Nuevo Producto en Catálogo" : "Editar Ficha Técnica")</span>
+                    </div>
+                    <button type="button" class="lk-modal-close" @onclick="CerrarModals">
+                        <i class="bi bi-x-lg"></i>
+                    </button>
+                </div>
+
+                <div class="lk-modal-body">
+                    <div class="lk-prod-form-grid">
+                        <div>
+                            <label class="lk-field-label">Código / SKU</label>
+                            <input type="text" class="lk-field-input" placeholder="Ej. LK-015" @bind="productoEditando.Codigo" />
+                        </div>
+
+                        <div>
+                            <label class="lk-field-label">Categoría</label>
+                            <select class="lk-field-select" @bind="productoEditando.CategoriaId">
+                                @foreach (var cat in categorias.Where(c => c.Activa))
+                                {
+                                    <option value="@cat.Id">@cat.Nombre</option>
+                                }
+                            </select>
+                        </div>
+
+                        <div class="span-2">
+                            <label class="lk-field-label">Nombre del Producto</label>
+                            <input type="text" class="lk-field-input" placeholder="Ej. Vidrio Templado iPad 10.9" @bind="productoEditando.Nombre" />
+                        </div>
+
+                        <div>
+                            <label class="lk-field-label">Stock Local 2003 (Local 1)</label>
+                            <input type="number" min="0" class="lk-field-input" @bind="productoEditando.StockLocal1" />
+                        </div>
+
+                        <div>
+                            <label class="lk-field-label">Stock Local 2039 (Local 2)</label>
+                            <input type="number" min="0" class="lk-field-input" @bind="productoEditando.StockLocal2" />
+                        </div>
+
+                        <div>
+                            <label class="lk-field-label">Alerta Stock Mínimo</label>
+                            <input type="number" min="1" class="lk-field-input" @bind="productoEditando.StockMinimo" />
+                        </div>
+
+                        <div>
+                            <label class="lk-field-label">Costo Adquisición ($)</label>
+                            <input type="number" min="0" step="500" class="lk-field-input" @bind="productoEditando.CostoAdquisicion" @bind:event="oninput" />
+                        </div>
+
+                        <div>
+                            <label class="lk-field-label">
+                                Precio Detal ($)
+                                <span class="lk-margin-pill margin-detal">+@productoEditando.MargenDetalPorcentaje%</span>
+                            </label>
+                            <input type="number" min="0" step="500" class="lk-field-input" @bind="productoEditando.PrecioDetal" @bind:event="oninput" />
+                        </div>
+
+                        <div>
+                            <label class="lk-field-label">
+                                Precio Por Mayor ($)
+                                <span class="lk-margin-pill margin-mayor">+@productoEditando.MargenMayorPorcentaje%</span>
+                            </label>
+                            <input type="number" min="0" step="500" class="lk-field-input" @bind="productoEditando.PrecioPorMayor" @bind:event="oninput" />
+                        </div>
+                    </div>
+
+                    <div class="lk-modal-footer-btns">
+                        <button type="button" class="lk-btn-cancel" @onclick="CerrarModals">Cancelar</button>
+                        <button type="button" class="lk-btn-save" @onclick="GuardarFichaProductoAsync">
+                            <i class="bi bi-check-lg"></i>
+                            <span>Guardar Producto</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private readonly CultureInfo culturaCo = new("es-CO");
+
+    private List<ProductoDto> productos = new();
+    private List<CategoriaDto> categorias = new();
+
+    // Filtros
+    private string textoBusqueda = "";
+    private int categoriaIdSeleccionada = 0;
+    private bool mostrarActivos = true;
+    private int paginaActual = 1;
+    private const int TamanoPagina = 6;
+
+    // Feedback
+    private string? mensajeFeedback;
+    private bool esFeedbackError;
+
+    // Modal Traslado
+    private bool mostrarModalTraslado;
+    private int trasladoProductoId;
+    private int trasladoOrigenId = 1;
+    private int trasladoDestinoId = 2;
+    private int trasladoCantidad = 1;
+    private string trasladoObservacion = "";
+    private string? errorModalTraslado;
+
+    // Modal Producto
+    private bool mostrarModalProducto;
+    private ProductoDto productoEditando = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        SessionService.OnChange += RefrescarVista;
+        InventarioService.OnInventarioChanged += AlCambiarInventario;
+        await CargarDatosAsync();
+    }
+
+    private async Task CargarDatosAsync()
+    {
+        productos = await InventarioService.ObtenerProductosAsync(incluirInactivos: true);
+        categorias = await InventarioService.ObtenerCategoriasAsync();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void AlCambiarInventario() => _ = CargarDatosAsync();
+
+    private void RefrescarVista() => InvokeAsync(StateHasChanged);
+
+    private string FormatearCop(decimal valor) =>
+        "$" + valor.ToString("#,##0", culturaCo);
+
+    private string ObtenerNombreCategoria(ProductoDto prod)
+    {
+        if (!string.IsNullOrWhiteSpace(prod.CategoriaNombre))
+            return prod.CategoriaNombre;
+
+        return categorias.FirstOrDefault(c => c.Id == prod.CategoriaId)?.Nombre ?? "General";
+    }
+
+    private int TotalActivos => productos.Count(p => p.Activo);
+    private int TotalInactivos => productos.Count(p => !p.Activo);
+
+    private List<ProductoDto> ProductosFiltrados =>
+        productos
+            .Where(p => p.Activo == mostrarActivos)
+            .Where(p => categoriaIdSeleccionada == 0 || p.CategoriaId == categoriaIdSeleccionada)
+            .Where(p => string.IsNullOrWhiteSpace(textoBusqueda) ||
+                        p.Nombre.Contains(textoBusqueda, StringComparison.OrdinalIgnoreCase) ||
+                        p.Codigo.Contains(textoBusqueda, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+    private int TotalPaginas => Math.Max(1, (int)Math.Ceiling(ProductosFiltrados.Count / (double)TamanoPagina));
+
+    private List<ProductoDto> ProductosPaginados =>
+        ProductosFiltrados
+            .Skip((paginaActual - 1) * TamanoPagina)
+            .Take(TamanoPagina)
+            .ToList();
+
+    private void ReiniciarPaginacion() => paginaActual = 1;
+
+    private void LimpiarBusqueda()
+    {
+        textoBusqueda = "";
+        paginaActual = 1;
+    }
+
+    private void CambiarFiltroEstado(bool activos)
+    {
+        mostrarActivos = activos;
+        paginaActual = 1;
+    }
+
+    private async Task AlternarEstadoProductoAsync(ProductoDto prod)
+    {
+        bool nuevoEstado = !prod.Activo;
+        await InventarioService.CambiarEstadoProductoAsync(prod.Id, nuevoEstado);
+        esFeedbackError = false;
+        mensajeFeedback = nuevoEstado
+            ? $"Producto '{prod.Nombre}' reactivado en el catálogo."
+            : $"Producto '{prod.Nombre}' desactivado de forma segura (historial contable conservado).";
+    }
+
+    // --- Lógica Modal Traslados ---
+    private ProductoDto? ProductoTrasladoActual =>
+        productos.FirstOrDefault(p => p.Id == trasladoProductoId);
+
+    private int StockDisponibleOrigen =>
+        ProductoTrasladoActual == null ? 0 :
+        (trasladoOrigenId == 1 ? ProductoTrasladoActual.StockLocal1 : ProductoTrasladoActual.StockLocal2);
+
+    private void AbrirModalTraslado(ProductoDto? prod)
+    {
+        errorModalTraslado = null;
+        var activos = productos.Where(p => p.Activo).ToList();
+        if (!activos.Any()) return;
+
+        var seleccionado = prod ?? activos.First();
+        trasladoProductoId = seleccionado.Id;
+        trasladoOrigenId = seleccionado.StockLocal1 >= seleccionado.StockLocal2 ? 1 : 2;
+        trasladoDestinoId = trasladoOrigenId == 1 ? 2 : 1;
+        trasladoCantidad = 1;
+        trasladoObservacion = "";
+        mostrarModalTraslado = true;
+    }
+
+    private void SincronizarDestino()
+    {
+        trasladoDestinoId = trasladoOrigenId == 1 ? 2 : 1;
+        ActualizarMaxTraslado();
+    }
+
+    private void ActualizarMaxTraslado()
+    {
+        if (trasladoCantidad > StockDisponibleOrigen)
+            trasladoCantidad = Math.Max(1, StockDisponibleOrigen);
+    }
+
+    private async Task EjecutarTrasladoAsync()
+    {
+        errorModalTraslado = null;
+        var usuario = SessionService.UsuarioActual?.NombreCompleto ?? "Luz Karime";
+        var resultado = await InventarioService.RegistrarTrasladoAsync(
+            trasladoProductoId,
+            trasladoOrigenId,
+            trasladoDestinoId,
+            trasladoCantidad,
+            usuario,
+            trasladoObservacion);
+
+        if (resultado.Exito)
+        {
+            mostrarModalTraslado = false;
+            esFeedbackError = false;
+            mensajeFeedback = resultado.Mensaje;
+        }
+        else
+        {
+            errorModalTraslado = resultado.Mensaje;
+        }
+    }
+
+    // --- Lógica Modal Nuevo / Editar Producto ---
+    private void AbrirModalNuevoProducto()
+    {
+        int primeraCatId = categorias.FirstOrDefault(c => c.Activa)?.Id ?? 1;
+        productoEditando = new ProductoDto
+        {
+            CategoriaId = primeraCatId,
+            StockMinimo = 5,
+            Activo = true
+        };
+        mostrarModalProducto = true;
+    }
+
+    private void AbrirModalEditarProducto(ProductoDto prod)
+    {
+        productoEditando = new ProductoDto
+        {
+            Id = prod.Id,
+            Codigo = prod.Codigo,
+            Nombre = prod.Nombre,
+            CategoriaId = prod.CategoriaId,
+            CategoriaNombre = prod.CategoriaNombre,
+            ImagenUrl = prod.ImagenUrl,
+            StockLocal1 = prod.StockLocal1,
+            StockLocal2 = prod.StockLocal2,
+            StockMinimo = prod.StockMinimo,
+            CostoAdquisicion = prod.CostoAdquisicion,
+            PrecioDetal = prod.PrecioDetal,
+            PrecioPorMayor = prod.PrecioPorMayor,
+            Activo = prod.Activo,
+            DiasSinMovimiento = prod.DiasSinMovimiento
+        };
+        mostrarModalProducto = true;
+    }
+
+    private async Task GuardarFichaProductoAsync()
+    {
+        if (string.IsNullOrWhiteSpace(productoEditando.Nombre)) return;
+
+        var cat = categorias.FirstOrDefault(c => c.Id == productoEditando.CategoriaId);
+        if (cat != null)
+        {
+            productoEditando.CategoriaNombre = cat.Nombre;
+        }
+
+        bool esNuevo = productoEditando.Id == 0;
+        await InventarioService.GuardarProductoAsync(productoEditando);
+        mostrarModalProducto = false;
+        esFeedbackError = false;
+        mensajeFeedback = esNuevo
+            ? $"Producto '{productoEditando.Nombre}' agregado al catálogo distribuido."
+            : $"Ficha técnica de '{productoEditando.Nombre}' actualizada correctamente.";
+    }
+
+    private void CerrarModals()
+    {
+        mostrarModalTraslado = false;
+        mostrarModalProducto = false;
+    }
+
+    public void Dispose()
+    {
+        SessionService.OnChange -= RefrescarVista;
+        InventarioService.OnInventarioChanged -= AlCambiarInventario;
+    }
+}

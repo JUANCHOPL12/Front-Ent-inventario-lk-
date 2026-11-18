@@ -1,0 +1,556 @@
+.lk-close-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    max-width: 1380px;
+    margin: 0 auto;
+    font-family: 'Plus Jakarta Sans', 'Segoe UI', sans-serif;
+}
+
+/* 1. Encabezado */
+.lk-close-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.lk-close-title-group {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.lk-close-accent {
+    width: 6px;
+    height: 48px;
+    border-radius: 999px;
+    background: linear-gradient(180deg, #0d5be1 0%, #053399 100%);
+    flex-shrink: 0;
+}
+
+.lk-close-title {
+    margin: 0;
+    font-family: 'Russo One', sans-serif;
+    font-size: 1.72rem;
+    font-weight: 400;
+    color: #0b1736;
+    line-height: 1.15;
+    letter-spacing: 0.4px;
+}
+
+.lk-close-subtitle {
+    margin: 2px 0 0;
+    font-size: 0.9rem;
+    color: #475569;
+    font-weight: 500;
+}
+
+/* 2. Barra de Filtros Fecha y Sede */
+.lk-audit-bar {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 0.85rem 1.25rem;
+    box-shadow: 0 6px 20px rgba(15, 23, 42, 0.05);
+    border: 1px solid #e2e8f0;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1.25rem;
+}
+
+.lk-audit-group {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+}
+
+.lk-audit-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    background: #eff6ff;
+    color: #0d5be1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.05rem;
+}
+
+.lk-audit-label {
+    font-weight: 800;
+    font-size: 0.94rem;
+    color: #0b1736;
+    margin: 0;
+}
+
+.lk-date-input {
+    border: 1.5px solid #cbd5e1;
+    border-radius: 10px;
+    padding: 0.45rem 0.85rem;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #0b1736;
+    background: #f8fafc;
+    outline: none;
+}
+
+.lk-date-input:focus {
+    border-color: #0d5be1;
+    background: #ffffff;
+}
+
+.lk-audit-divider {
+    width: 1.5px;
+    height: 28px;
+    background: #cbd5e1;
+}
+
+.lk-sede-radios {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 14px;
+}
+
+.lk-radio-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #334155;
+    cursor: pointer;
+    padding: 0.3rem 0.65rem;
+    border-radius: 999px;
+    transition: background-color 0.15s ease;
+}
+
+.lk-radio-pill:hover {
+    background: #f1f5f9;
+}
+
+.lk-radio-pill.selected {
+    color: #0d5be1;
+    font-weight: 700;
+}
+
+.lk-radio-pill input[type="radio"] {
+    accent-color: #0d5be1;
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+}
+
+.lk-sede-locked {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #eff6ff;
+    color: #0d5be1;
+    padding: 0.35rem 0.85rem;
+    border-radius: 999px;
+    font-size: 0.85rem;
+    font-weight: 700;
+}
+
+/* Notificación */
+.lk-close-toast {
+    background: #dcfce7;
+    border: 1px solid #86efac;
+    color: #166534;
+    border-radius: 12px;
+    padding: 0.75rem 1.1rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.88rem;
+    font-weight: 600;
+}
+
+.lk-toast-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.lk-close-toast button {
+    border: none;
+    background: transparent;
+    color: inherit;
+}
+
+/* 3. Fila de 4 Tarjetas KPI */
+.lk-close-kpi-grid {
+    display: grid;
+    gap: 1.1rem;
+}
+
+.lk-close-kpi-grid.cols-4 {
+    grid-template-columns: repeat(4, 1fr);
+}
+
+.lk-close-kpi-grid.cols-3 {
+    grid-template-columns: repeat(3, 1fr);
+}
+
+.lk-ckpi-card {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 1.15rem 1.2rem;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    box-shadow: 0 6px 20px rgba(15, 23, 42, 0.06);
+    border: 1px solid #e2e8f0;
+    border-bottom-width: 5px;
+}
+
+.lk-ckpi-card.border-blue {
+    border-bottom-color: #0d5be1;
+}
+
+.lk-ckpi-card.border-navy {
+    border-bottom-color: #06153d;
+}
+
+.lk-ckpi-card.border-red {
+    border-bottom-color: #d91e1e;
+}
+
+.lk-ckpi-card.border-green {
+    border-bottom-color: #059669;
+}
+
+.lk-ckpi-icon {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #ffffff;
+    font-size: 1.4rem;
+    flex-shrink: 0;
+}
+
+.lk-ckpi-icon.bg-navy {
+    background: #06153d;
+}
+
+.lk-ckpi-icon.bg-red {
+    background: #d91e1e;
+}
+
+.lk-ckpi-icon.bg-green {
+    background: #059669;
+}
+
+.lk-ckpi-label {
+    font-size: 0.86rem;
+    font-weight: 800;
+    color: #0b1736;
+}
+
+.lk-ckpi-value {
+    font-family: 'Russo One', sans-serif;
+    font-size: 1.55rem;
+    font-weight: 400;
+    line-height: 1.15;
+    margin-top: 2px;
+}
+
+.val-blue {
+    color: #0d5be1;
+}
+
+.val-navy {
+    color: #06153d;
+}
+
+.val-red {
+    color: #d91e1e;
+}
+
+.val-green {
+    color: #059669;
+}
+
+.lk-ckpi-sub {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: #64748b;
+    margin-top: 3px;
+}
+
+/* 4. Sección Media: Gastos */
+.lk-expenses-grid {
+    display: grid;
+    grid-template-columns: 1fr 1.45fr;
+    gap: 1.25rem;
+    align-items: start;
+}
+
+.lk-panel-card {
+    background: #ffffff;
+    border-radius: 18px;
+    box-shadow: 0 6px 20px rgba(15, 23, 42, 0.06);
+    border: 1px solid #e2e8f0;
+    overflow: hidden;
+}
+
+.lk-panel-header {
+    background: linear-gradient(90deg, #06153d 0%, #0b2669 100%);
+    color: #ffffff;
+    padding: 0.85rem 1.25rem;
+    font-family: 'Russo One', sans-serif;
+    font-size: 1.02rem;
+    font-weight: 400;
+    letter-spacing: 0.4px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.lk-panel-body {
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.95rem;
+}
+
+.lk-form-error {
+    background: #fee2e2;
+    color: #b91c1c;
+    padding: 0.6rem 0.85rem;
+    border-radius: 10px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.lk-form-row {
+    display: grid;
+    grid-template-columns: 105px 1fr;
+    align-items: center;
+    gap: 10px;
+}
+
+.lk-form-label {
+    font-size: 0.88rem;
+    font-weight: 800;
+    color: #0b1736;
+}
+
+.lk-form-control {
+    width: 100%;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 10px;
+    padding: 0.55rem 0.85rem;
+    font-size: 0.88rem;
+    font-weight: 500;
+    color: #0b1736;
+    background: #ffffff;
+    outline: none;
+}
+
+.lk-form-control:focus {
+    border-color: #0d5be1;
+}
+
+.lk-money-input-group {
+    display: flex;
+    align-items: center;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 10px;
+    overflow: hidden;
+    background: #ffffff;
+}
+
+.lk-money-input-group:focus-within {
+    border-color: #0d5be1;
+}
+
+.lk-money-prefix {
+    padding: 0.55rem 0.85rem;
+    background: #f1f5f9;
+    border-right: 1px solid #cbd5e1;
+    font-weight: 800;
+    color: #334155;
+}
+
+.lk-money-field {
+    border: none;
+    width: 100%;
+    padding: 0.55rem 0.85rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #0b1736;
+    outline: none;
+}
+
+.lk-form-submit-wrap {
+    display: flex;
+    justify-content: center;
+    margin-top: 0.35rem;
+}
+
+.lk-btn-register-expense {
+    border: none;
+    border-radius: 12px;
+    padding: 0.75rem 1.75rem;
+    background: linear-gradient(180deg, #e51d1d 0%, #b00909 100%);
+    color: #ffffff;
+    font-family: 'Russo One', sans-serif;
+    font-size: 0.95rem;
+    letter-spacing: 0.4px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 6px 16px rgba(217, 30, 30, 0.28);
+    transition: transform 0.15s ease, filter 0.15s ease;
+}
+
+.lk-btn-register-expense:hover:not(:disabled) {
+    filter: brightness(1.08);
+    transform: translateY(-1px);
+}
+
+/* Tablas de Gastos e Histórico */
+.lk-table-scroll {
+    width: 100%;
+    overflow-x: auto;
+}
+
+.lk-sub-table,
+.lk-history-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.86rem;
+}
+
+.lk-sub-table thead tr {
+    background: #0d5be1;
+    color: #ffffff;
+}
+
+.lk-history-table thead tr {
+    background: #081e54;
+    color: #ffffff;
+}
+
+.lk-sub-table th,
+.lk-history-table th {
+    padding: 0.72rem 0.95rem;
+    font-family: 'Russo One', sans-serif;
+    font-size: 0.8rem;
+    font-weight: 400;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+}
+
+.lk-sub-table td,
+.lk-history-table td {
+    padding: 0.72rem 0.95rem;
+    border-bottom: 1px solid #f1f5f9;
+    vertical-align: middle;
+}
+
+.lk-sub-table tbody tr:hover,
+.lk-history-table tbody tr:hover {
+    background: #f8fafc;
+}
+
+.lk-empty-cell {
+    text-align: center;
+    padding: 2rem 1rem !important;
+    color: #64748b;
+    font-weight: 500;
+}
+
+.lk-cat-tag {
+    background: #f1f5f9;
+    color: #334155;
+    padding: 2px 10px;
+    border-radius: 999px;
+    font-size: 0.76rem;
+    font-weight: 700;
+}
+
+.lk-invoice-code {
+    font-family: 'Russo One', sans-serif;
+    color: #0b1736;
+    font-size: 0.85rem;
+}
+
+.lk-sede-tag {
+    padding: 2px 10px;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 700;
+}
+
+.tag-2003 {
+    background: #dbeafe;
+    color: #1d4ed8;
+}
+
+.tag-2039 {
+    background: #e0e7ff;
+    color: #3730a3;
+}
+
+.lk-pay-tag {
+    background: #f1f5f9;
+    color: #0f172a;
+    padding: 2px 10px;
+    border-radius: 8px;
+    font-size: 0.78rem;
+    font-weight: 700;
+}
+
+.lk-amount-red {
+    font-family: 'Russo One', sans-serif;
+    color: #d91e1e;
+}
+
+.lk-amount-navy {
+    font-family: 'Russo One', sans-serif;
+    color: #0b1736;
+}
+
+.lk-amount-green {
+    font-family: 'Russo One', sans-serif;
+    color: #059669;
+}
+
+.text-right {
+    text-align: right;
+}
+
+@media (max-width: 1150px) {
+    .lk-close-kpi-grid.cols-4,
+    .lk-close-kpi-grid.cols-3 {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .lk-expenses-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 600px) {
+    .lk-close-kpi-grid.cols-4,
+    .lk-close-kpi-grid.cols-3 {
+        grid-template-columns: 1fr;
+    }
+
+    .lk-form-row {
+        grid-template-columns: 1fr;
+    }
+}

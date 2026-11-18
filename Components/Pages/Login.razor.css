@@ -1,0 +1,237 @@
+.lk-login-wrapper {
+    position: relative;
+    min-height: 100vh;
+    width: 100%;
+    background: radial-gradient(circle at 50% 25%, #0b2e7a 0%, #051338 55%, #02081a 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+    overflow: hidden;
+    font-family: 'Plus Jakarta Sans', 'Segoe UI', sans-serif;
+}
+
+.lk-bg-beams {
+    position: absolute;
+    inset: 0;
+    background:
+        linear-gradient(125deg, rgba(13, 91, 225, 0.16) 0%, transparent 45%),
+        linear-gradient(305deg, rgba(217, 30, 30, 0.12) 0%, transparent 45%);
+    pointer-events: none;
+}
+
+.lk-login-content {
+    position: relative;
+    z-index: 2;
+    width: 100%;
+    max-width: 470px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.25rem;
+}
+
+.lk-brand-header {
+    text-align: center;
+    width: 100%;
+}
+
+.lk-logo-svg {
+    width: 100%;
+    max-width: 410px;
+    height: auto;
+    display: block;
+    margin: 0 auto;
+}
+
+.lk-brand-tagline {
+    margin: 4px 0 0;
+    color: #dbeafe;
+    font-size: 0.85rem;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    text-shadow: 0 2px 6px rgba(0, 0, 0, 0.6);
+}
+
+.lk-login-card {
+    width: 100%;
+    background: #ffffff;
+    border-radius: 20px;
+    padding: 1.85rem 2rem;
+    box-shadow: 0 20px 50px rgba(0, 5, 20, 0.55);
+}
+
+.lk-card-title {
+    margin: 0;
+    font-family: 'Russo One', sans-serif;
+    font-size: 1.45rem;
+    color: #061133;
+    text-align: center;
+    letter-spacing: 0.4px;
+}
+
+.lk-card-subtitle {
+    margin: 4px 0 1.35rem;
+    font-size: 0.84rem;
+    color: #64748b;
+    text-align: center;
+    font-weight: 500;
+}
+
+.lk-error-alert {
+    background: #fee2e2;
+    border: 1px solid #fecaca;
+    color: #b91c1c;
+    border-radius: 10px;
+    padding: 0.65rem 0.85rem;
+    font-size: 0.82rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 1rem;
+}
+
+.lk-form-group {
+    margin-bottom: 1rem;
+}
+
+.lk-label {
+    display: block;
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 5px;
+}
+
+.lk-input-box {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 12px;
+    padding: 0.65rem 0.9rem;
+    background: #f8fafc;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.lk-input-box:focus-within {
+    border-color: #0d5be1;
+    background: #ffffff;
+    box-shadow: 0 0 0 3px rgba(13, 91, 225, 0.15);
+}
+
+.lk-input-box i {
+    color: #64748b;
+    font-size: 1rem;
+}
+
+.lk-input {
+    border: none;
+    background: transparent;
+    width: 100%;
+    outline: none;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 0.92rem;
+    font-weight: 600;
+    color: #0f172a;
+}
+
+.lk-btn-primary {
+    width: 100%;
+    margin-top: 0.5rem;
+    border: none;
+    border-radius: 12px;
+    padding: 0.8rem 1.2rem;
+    background: linear-gradient(180deg, #0d6efd 0%, #063594 100%);
+    color: #ffffff;
+    font-family: 'Russo One', sans-serif;
+    font-size: 0.98rem;
+    letter-spacing: 0.6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    box-shadow: 0 8px 20px rgba(13, 91, 225, 0.35);
+    transition: transform 0.15s ease, filter 0.15s ease;
+}
+
+.lk-btn-primary:hover {
+    filter: brightness(1.08);
+    transform: translateY(-1px);
+}
+
+.lk-demo-box {
+    width: 100%;
+    background: rgba(6, 17, 51, 0.72);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 16px;
+    padding: 0.9rem 1rem;
+}
+
+.lk-demo-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    color: #93c5fd;
+    font-size: 0.73rem;
+    font-weight: 800;
+    letter-spacing: 0.8px;
+    margin-bottom: 0.65rem;
+}
+
+.lk-demo-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #22c55e;
+    box-shadow: 0 0 8px #22c55e;
+}
+
+.lk-demo-buttons {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+}
+
+.lk-demo-btn {
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 11px;
+    padding: 0.55rem 0.5rem;
+    background: rgba(255, 255, 255, 0.07);
+    color: #ffffff;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 4px;
+    transition: all 0.15s ease;
+}
+
+.lk-demo-btn i {
+    font-size: 1.05rem;
+}
+
+.lk-demo-btn strong {
+    display: block;
+    font-size: 0.76rem;
+    line-height: 1.15;
+}
+
+.lk-demo-btn small {
+    display: block;
+    font-size: 0.66rem;
+    color: #cbd5e1;
+}
+
+.lk-demo-btn.demo-admin:hover {
+    background: rgba(217, 30, 30, 0.35);
+    border-color: #ef4444;
+}
+
+.lk-demo-btn.demo-sede:hover {
+    background: rgba(13, 91, 225, 0.38);
+    border-color: #3b82f6;
+}

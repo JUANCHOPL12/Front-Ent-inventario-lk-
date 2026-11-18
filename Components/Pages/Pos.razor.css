@@ -1,0 +1,771 @@
+.lk-pos-wrapper {
+    display: grid;
+    grid-template-columns: 1.42fr 1fr;
+    gap: 1.35rem;
+    max-width: 1420px;
+    margin: 0 auto;
+    font-family: 'Plus Jakarta Sans', 'Segoe UI', sans-serif;
+    align-items: start;
+}
+
+/* =========================================================
+   COLUMNA IZQUIERDA: CATÁLOGO POS
+   ========================================================= */
+.lk-pos-catalog-col {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.lk-pos-title-group {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.lk-pos-accent {
+    width: 6px;
+    height: 48px;
+    border-radius: 999px;
+    background: linear-gradient(180deg, #0d5be1 0%, #053399 100%);
+    flex-shrink: 0;
+}
+
+.lk-pos-title-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+}
+
+.lk-pos-title {
+    margin: 0;
+    font-family: 'Russo One', sans-serif;
+    font-size: 1.72rem;
+    font-weight: 400;
+    color: #0b1736;
+    line-height: 1.15;
+    letter-spacing: 0.4px;
+}
+
+.lk-sede-pill-select,
+.lk-sede-pill-fixed {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: linear-gradient(180deg, #0d6efd 0%, #06399c 100%);
+    color: #ffffff;
+    padding: 0.36rem 0.9rem;
+    border-radius: 999px;
+    font-size: 0.84rem;
+    font-weight: 700;
+    box-shadow: 0 4px 12px rgba(13, 91, 225, 0.28);
+}
+
+.lk-sede-pill-select select {
+    border: none;
+    background: transparent;
+    color: #ffffff;
+    font-weight: 700;
+    outline: none;
+    cursor: pointer;
+}
+
+.lk-sede-pill-select select option {
+    color: #0b1736;
+    background: #ffffff;
+}
+
+.lk-pos-subtitle {
+    margin: 3px 0 0;
+    font-size: 0.88rem;
+    color: #475569;
+    font-weight: 500;
+}
+
+/* Buscador */
+.lk-pos-search-box {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #ffffff;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 14px;
+    padding: 0.68rem 1rem;
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.04);
+}
+
+.lk-pos-search-box:focus-within {
+    border-color: #0d5be1;
+    box-shadow: 0 0 0 3px rgba(13, 91, 225, 0.12);
+}
+
+.lk-pos-search-box i {
+    color: #64748b;
+    font-size: 1rem;
+}
+
+.lk-pos-search-input {
+    border: none;
+    background: transparent;
+    width: 100%;
+    outline: none;
+    font-size: 0.92rem;
+    font-weight: 500;
+    color: #0b1736;
+}
+
+.lk-pos-clear-btn {
+    border: none;
+    background: transparent;
+    color: #94a3b8;
+    padding: 0;
+}
+
+/* Categorías */
+.lk-pos-categories {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.lk-cat-pill {
+    border: 1px solid #cbd5e1;
+    background: #ffffff;
+    color: #1e293b;
+    border-radius: 999px;
+    padding: 0.42rem 0.95rem;
+    font-size: 0.82rem;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.15s ease;
+}
+
+.lk-cat-pill:hover {
+    border-color: #0d5be1;
+    color: #0d5be1;
+}
+
+.lk-cat-pill.active {
+    background: linear-gradient(180deg, #0d6efd 0%, #0741ad 100%);
+    border-color: #0d6efd;
+    color: #ffffff;
+    box-shadow: 0 4px 12px rgba(13, 91, 225, 0.28);
+}
+
+/* Cuadrícula de Productos */
+.lk-pos-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.95rem;
+}
+
+.lk-prod-card {
+    background: #ffffff;
+    border: 1.5px solid #e2e8f0;
+    border-radius: 18px;
+    padding: 1rem 0.85rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 8px;
+    box-shadow: 0 6px 18px rgba(15, 23, 42, 0.05);
+    transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.lk-prod-card:hover:not(:disabled) {
+    transform: translateY(-3px);
+    border-color: #0d5be1;
+    box-shadow: 0 10px 24px rgba(13, 91, 225, 0.14);
+}
+
+.lk-prod-card.out-of-stock {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+.lk-prod-card-media {
+    width: 74px;
+    height: 74px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.lk-prod-card-media img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    border-radius: 10px;
+}
+
+.lk-prod-card-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+    color: #0d5be1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.85rem;
+}
+
+.lk-prod-card-name {
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: #0b1736;
+    line-height: 1.25;
+    min-height: 2.2em;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.lk-prod-stock-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 2px 10px;
+    border-radius: 999px;
+    font-size: 0.74rem;
+    font-weight: 700;
+}
+
+.stock-ok {
+    background: #dcfce7;
+    color: #15803d;
+}
+
+.stock-warn {
+    background: #fef3c7;
+    color: #b45309;
+}
+
+.stock-zero {
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
+.lk-prod-card-price {
+    font-family: 'Russo One', sans-serif;
+    font-size: 1.22rem;
+    font-weight: 400;
+    color: #0b1736;
+    letter-spacing: 0.3px;
+}
+
+.lk-pos-empty-catalog {
+    background: #ffffff;
+    border-radius: 18px;
+    padding: 3rem 1rem;
+    text-align: center;
+    color: #64748b;
+    border: 1px solid #e2e8f0;
+}
+
+.lk-pos-empty-catalog i {
+    font-size: 2rem;
+    display: block;
+    margin-bottom: 6px;
+}
+
+/* =========================================================
+   COLUMNA DERECHA: CARRITO DE FACTURACIÓN
+   ========================================================= */
+.lk-cart-panel {
+    background: #ffffff;
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+    border: 1px solid #e2e8f0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.lk-cart-header {
+    background: linear-gradient(90deg, #06153d 0%, #0b2669 100%);
+    padding: 0.95rem 1.15rem;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    color: #ffffff;
+}
+
+.lk-cart-title {
+    font-family: 'Russo One', sans-serif;
+    font-size: 1.05rem;
+    font-weight: 400;
+    letter-spacing: 0.4px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.lk-tarifa-switch {
+    background: #ffffff;
+    border-radius: 999px;
+    padding: 3px;
+    display: inline-flex;
+    align-items: center;
+}
+
+.lk-tarifa-btn {
+    border: none;
+    background: transparent;
+    color: #0b1736;
+    font-size: 0.74rem;
+    font-weight: 800;
+    padding: 0.32rem 0.75rem;
+    border-radius: 999px;
+    transition: all 0.15s ease;
+}
+
+.lk-tarifa-btn.active {
+    background: linear-gradient(180deg, #0d6efd 0%, #0741ad 100%);
+    color: #ffffff;
+}
+
+.lk-cart-notice {
+    background: #eff6ff;
+    border-bottom: 1px solid #bfdbfe;
+    color: #1d4ed8;
+    padding: 0.55rem 1rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.lk-cart-notice button {
+    border: none;
+    background: transparent;
+    color: inherit;
+    font-size: 1.1rem;
+    line-height: 1;
+}
+
+/* Lista de ítems */
+.lk-cart-items {
+    padding: 0.85rem 1.1rem;
+    max-height: 360px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.lk-cart-empty {
+    padding: 2.5rem 1rem;
+    text-align: center;
+    color: #64748b;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+}
+
+.lk-cart-empty i {
+    font-size: 2.2rem;
+    color: #94a3b8;
+}
+
+.lk-cart-empty strong {
+    color: #0b1736;
+    font-size: 0.95rem;
+}
+
+.lk-cart-empty span {
+    font-size: 0.82rem;
+}
+
+.lk-cart-item {
+    border-bottom: 1px solid #f1f5f9;
+    padding-bottom: 0.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.lk-cart-item:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.lk-cart-item-main {
+    display: grid;
+    grid-template-columns: 38px 1fr auto 88px 26px;
+    align-items: center;
+    gap: 8px;
+}
+
+.lk-cart-item-thumb {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    background: #eff6ff;
+    color: #0d5be1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    overflow: hidden;
+}
+
+.lk-cart-item-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.lk-cart-item-name {
+    font-size: 0.84rem;
+    font-weight: 700;
+    color: #0b1736;
+    line-height: 1.2;
+}
+
+.lk-cart-item-unit {
+    font-size: 0.76rem;
+    font-weight: 700;
+    color: #0d5be1;
+}
+
+.lk-tarifa-mini {
+    color: #64748b;
+    font-weight: 600;
+}
+
+/* Stepper (- 1 +) */
+.lk-qty-stepper {
+    display: inline-flex;
+    align-items: center;
+    border: 1px solid #cbd5e1;
+    border-radius: 999px;
+    background: #f8fafc;
+    overflow: hidden;
+}
+
+.lk-qty-stepper button {
+    border: none;
+    background: transparent;
+    width: 24px;
+    height: 26px;
+    font-weight: 800;
+    color: #0b1736;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.lk-qty-stepper button:disabled {
+    opacity: 0.35;
+}
+
+.lk-qty-stepper span {
+    min-width: 22px;
+    text-align: center;
+    font-family: 'Russo One', sans-serif;
+    font-size: 0.82rem;
+    color: #0b1736;
+}
+
+/* Input Precio Editable */
+.lk-price-input {
+    width: 100%;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 0.32rem 0.45rem;
+    font-family: 'Russo One', sans-serif;
+    font-size: 0.84rem;
+    color: #0b1736;
+    text-align: right;
+    background: #ffffff;
+    outline: none;
+}
+
+.lk-price-input:focus {
+    border-color: #0d5be1;
+}
+
+.lk-price-input.input-invalid {
+    border-color: #dc2626;
+    background: #fef2f2;
+    color: #b91c1c;
+}
+
+.lk-item-remove {
+    border: none;
+    background: transparent;
+    color: #dc2626;
+    font-size: 1rem;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Alerta Precio Menor al Costo Mínimo */
+.lk-cost-warning {
+    background: #fee2e2;
+    border: 1px solid #fecaca;
+    color: #b91c1c;
+    border-radius: 8px;
+    padding: 0.35rem 0.7rem;
+    font-size: 0.76rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* Footer del Carrito */
+.lk-cart-footer {
+    padding: 1rem 1.15rem 1.2rem;
+    border-top: 1px solid #e2e8f0;
+    background: #f8fafc;
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+}
+
+.lk-pay-label {
+    font-family: 'Russo One', sans-serif;
+    font-size: 0.92rem;
+    color: #0b1736;
+    letter-spacing: 0.3px;
+}
+
+.lk-pay-methods {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+}
+
+.lk-pay-btn {
+    border: 1.5px solid #cbd5e1;
+    background: #ffffff;
+    color: #0b1736;
+    border-radius: 12px;
+    padding: 0.6rem 0.5rem;
+    font-size: 0.84rem;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    transition: all 0.15s ease;
+}
+
+.lk-pay-btn.active {
+    background: linear-gradient(180deg, #0d6efd 0%, #06399c 100%);
+    border-color: #0d6efd;
+    color: #ffffff;
+    box-shadow: 0 4px 12px rgba(13, 91, 225, 0.28);
+}
+
+.lk-admin-profit-bar {
+    background: #ffffff;
+    border: 1px dashed #94a3b8;
+    border-radius: 10px;
+    padding: 0.45rem 0.75rem;
+    font-size: 0.78rem;
+    color: #334155;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.lk-admin-profit-bar strong {
+    font-family: 'Russo One', sans-serif;
+    font-size: 0.88rem;
+}
+
+.lk-total-banner {
+    background: linear-gradient(90deg, #06153d 0%, #0b2669 100%);
+    color: #ffffff;
+    border-radius: 14px;
+    padding: 0.85rem 1.15rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.lk-total-label {
+    font-family: 'Russo One', sans-serif;
+    font-size: 1.05rem;
+    letter-spacing: 0.3px;
+}
+
+.lk-total-amount {
+    font-family: 'Russo One', sans-serif;
+    font-size: 1.78rem;
+    letter-spacing: 0.5px;
+}
+
+.lk-btn-checkout {
+    width: 100%;
+    border: none;
+    border-radius: 14px;
+    padding: 0.9rem 1.2rem;
+    background: linear-gradient(180deg, #e51d1d 0%, #b00909 100%);
+    color: #ffffff;
+    font-family: 'Russo One', sans-serif;
+    font-size: 1rem;
+    letter-spacing: 0.5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    box-shadow: 0 8px 20px rgba(217, 30, 30, 0.32);
+    transition: transform 0.15s ease, filter 0.15s ease;
+}
+
+.lk-btn-checkout:hover:not(:disabled) {
+    filter: brightness(1.07);
+    transform: translateY(-1px);
+}
+
+.lk-btn-checkout:disabled {
+    background: #94a3b8;
+    box-shadow: none;
+    cursor: not-allowed;
+}
+
+/* =========================================================
+   MODAL DE COMPROBANTE DE VENTA
+   ========================================================= */
+.lk-receipt-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(6, 17, 51, 0.6);
+    backdrop-filter: blur(4px);
+    z-index: 1050;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+}
+
+.lk-receipt-card {
+    width: 100%;
+    max-width: 420px;
+    background: #ffffff;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 24px 60px rgba(6, 17, 51, 0.45);
+}
+
+.lk-receipt-top {
+    background: linear-gradient(135deg, #059669 0%, #047857 100%);
+    color: #ffffff;
+    padding: 1.4rem 1.25rem;
+    text-align: center;
+}
+
+.lk-receipt-check {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.6rem;
+    margin: 0 auto 8px;
+}
+
+.lk-receipt-top h3 {
+    margin: 0;
+    font-family: 'Russo One', sans-serif;
+    font-size: 1.3rem;
+}
+
+.lk-receipt-top p {
+    margin: 4px 0 0;
+    font-size: 0.84rem;
+    opacity: 0.92;
+}
+
+.lk-receipt-body {
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.lk-receipt-meta {
+    background: #f8fafc;
+    border-radius: 12px;
+    padding: 0.8rem;
+    font-size: 0.82rem;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    color: #334155;
+}
+
+.lk-receipt-meta div {
+    display: flex;
+    justify-content: space-between;
+}
+
+.lk-receipt-lines {
+    border-top: 1px dashed #cbd5e1;
+    border-bottom: 1px dashed #cbd5e1;
+    padding: 0.75rem 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 0.84rem;
+}
+
+.lk-receipt-line {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.lk-receipt-total {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-family: 'Russo One', sans-serif;
+    font-size: 1.15rem;
+    color: #0b1736;
+}
+
+.lk-btn-new-sale {
+    width: 100%;
+    border: none;
+    border-radius: 12px;
+    padding: 0.8rem;
+    background: linear-gradient(180deg, #0d6efd 0%, #06399c 100%);
+    color: #ffffff;
+    font-family: 'Russo One', sans-serif;
+    font-size: 0.95rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+@media (max-width: 1100px) {
+    .lk-pos-wrapper {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 640px) {
+    .lk-pos-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}

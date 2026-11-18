@@ -1,0 +1,193 @@
+@page "/login"
+@using TecnologiaDigitalLK.Models
+@using TecnologiaDigitalLK.Services.Interfaces
+@inject IUserSessionService SessionService
+@inject NavigationManager Nav
+
+<PageTitle>Iniciar Sesión - Tecnología Digital LK</PageTitle>
+
+<div class="lk-login-wrapper">
+    <!-- Haces de luz geométricos diagonales de fondo -->
+    <div class="lk-bg-beams"></div>
+
+    <div class="lk-login-content">
+        <!-- 1. LOGOTIPO VECTORIAL IDÉNTICO A LA TARJETA TECNOLOGÍA DIGITAL LK -->
+        <div class="lk-brand-header">
+            <svg class="lk-logo-svg" viewBox="0 0 650 165" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Tecnología Digital LK">
+                <defs>
+                    <linearGradient id="lkBlueGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                        <stop offset="0%" stop-color="#2282ff" />
+                        <stop offset="50%" stop-color="#0b57d0" />
+                        <stop offset="100%" stop-color="#032675" />
+                    </linearGradient>
+                    <linearGradient id="lkRedGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                        <stop offset="0%" stop-color="#ff2424" />
+                        <stop offset="55%" stop-color="#d60c0c" />
+                        <stop offset="100%" stop-color="#8f0404" />
+                    </linearGradient>
+                    <filter id="lkCardShadow" x="-10%" y="-10%" width="125%" height="130%">
+                        <feDropShadow dx="0" dy="6" stdDeviation="5" flood-color="#000614" flood-opacity="0.75" />
+                    </filter>
+                </defs>
+
+                <g filter="url(#lkCardShadow)">
+                    <!-- TECNOLOGIA (Arriba) -->
+                    <text x="235" y="64"
+                          text-anchor="middle"
+                          font-family="'Russo One', sans-serif"
+                          font-size="52"
+                          letter-spacing="1.5"
+                          fill="url(#lkBlueGrad)"
+                          stroke="#ffffff"
+                          stroke-width="7"
+                          stroke-linejoin="round"
+                          paint-order="stroke fill">
+                        TECNOLOGIA
+                    </text>
+
+                    <!-- DIGITAL (Abajo, más grande como en la tarjeta) -->
+                    <text x="235" y="130"
+                          text-anchor="middle"
+                          font-family="'Russo One', sans-serif"
+                          font-size="70"
+                          letter-spacing="2"
+                          fill="url(#lkBlueGrad)"
+                          stroke="#ffffff"
+                          stroke-width="8"
+                          stroke-linejoin="round"
+                          paint-order="stroke fill">
+                        DIGITAL
+                    </text>
+
+                    <!-- LK (Derecha, inclinada en rojo con contorno blanco grueso) -->
+                    <g transform="translate(540, 128) skewX(-9)">
+                        <text x="0" y="0"
+                              text-anchor="middle"
+                              font-family="'Archivo Black', sans-serif"
+                              font-size="116"
+                              letter-spacing="-4"
+                              fill="url(#lkRedGrad)"
+                              stroke="#ffffff"
+                              stroke-width="11"
+                              stroke-linejoin="round"
+                              paint-order="stroke fill">
+                            LK
+                        </text>
+                    </g>
+                </g>
+            </svg>
+            <p class="lk-brand-tagline">C.C. Sanandrexitos Piso 2 • Locales 2003 y 2039 Ibagué</p>
+        </div>
+
+        <!-- 2. TARJETA PRINCIPAL DE LOGIN -->
+        <div class="lk-login-card">
+            <h2 class="lk-card-title">Iniciar Sesión</h2>
+            <p class="lk-card-subtitle">Ingresa tus credenciales para acceder al sistema POS e Inventario</p>
+
+            @if (!string.IsNullOrEmpty(mensajeError))
+            {
+                <div class="lk-error-alert">
+                    <i class="bi bi-exclamation-circle-fill"></i>
+                    <span>@mensajeError</span>
+                </div>
+            }
+
+            <div class="lk-form-group">
+                <label class="lk-label">Usuario</label>
+                <div class="lk-input-box">
+                    <i class="bi bi-person-fill"></i>
+                    <input type="text"
+                           class="lk-input"
+                           placeholder="Ej. admin, cajero1 o cajero2"
+                           @bind="usuarioInput"
+                           @bind:event="oninput" />
+                </div>
+            </div>
+
+            <div class="lk-form-group">
+                <label class="lk-label">Contraseña</label>
+                <div class="lk-input-box">
+                    <i class="bi bi-lock-fill"></i>
+                    <input type="password"
+                           class="lk-input"
+                           placeholder="••••••••"
+                           @bind="claveInput"
+                           @bind:event="oninput" />
+                </div>
+            </div>
+
+            <button type="button" class="lk-btn-primary" @onclick="IniciarSesionNormal">
+                <span>Iniciar Sesión</span>
+                <i class="bi bi-arrow-right"></i>
+            </button>
+        </div>
+
+        <!-- 3. ACCESO RÁPIDO DEMO (FASE 1) -->
+        <div class="lk-demo-box">
+            <div class="lk-demo-header">
+                <span class="lk-demo-dot"></span>
+                <span>ACCESO RÁPIDO DEMO (1 CLIC)</span>
+            </div>
+            <div class="lk-demo-buttons">
+                <button type="button" class="lk-demo-btn demo-admin" @onclick='() => EntrarDemo("admin", "1234", "/")'>
+                    <i class="bi bi-shield-lock-fill"></i>
+                    <div>
+                        <strong>Luz Karime</strong>
+                        <small>Administradora</small>
+                    </div>
+                </button>
+
+                <button type="button" class="lk-demo-btn demo-sede" @onclick='() => EntrarDemo("cajero1", "1234", "/pos")'>
+                    <i class="bi bi-shop"></i>
+                    <div>
+                        <strong>Cajero Local 2003</strong>
+                        <small>Punto de Venta</small>
+                    </div>
+                </button>
+
+                <button type="button" class="lk-demo-btn demo-sede" @onclick='() => EntrarDemo("cajero2", "1234", "/pos")'>
+                    <i class="bi bi-shop-window"></i>
+                    <div>
+                        <strong>Cajero Local 2039</strong>
+                        <small>Punto de Venta</small>
+                    </div>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private string usuarioInput = "";
+    private string claveInput = "";
+    private string? mensajeError;
+
+    private async Task IniciarSesionNormal()
+    {
+        mensajeError = null;
+        if (string.IsNullOrWhiteSpace(usuarioInput))
+        {
+            mensajeError = "Por favor ingresa tu usuario.";
+            return;
+        }
+
+        var exito = await SessionService.LoginAsync(usuarioInput.Trim(), claveInput);
+        if (exito)
+        {
+            Nav.NavigateTo(SessionService.EsAdmin ? "/" : "/pos");
+        }
+        else
+        {
+            mensajeError = "Usuario o contraseña incorrectos. Prueba con admin, cajero1 o cajero2.";
+        }
+    }
+
+    private async Task EntrarDemo(string user, string pass, string rutaDestino)
+    {
+        var exito = await SessionService.LoginAsync(user, pass);
+        if (exito)
+        {
+            Nav.NavigateTo(rutaDestino);
+        }
+    }
+}

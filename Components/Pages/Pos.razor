@@ -1,0 +1,568 @@
+@page "/pos"
+@implements IDisposable
+@using System.Globalization
+@using TecnologiaDigitalLK.Models
+@using TecnologiaDigitalLK.Services.Interfaces
+@inject IInventarioService InventarioService
+@inject IVentasService VentasService
+@inject IUserSessionService SessionService
+
+<PageTitle>Punto de Venta (POS) - Tecnología Digital LK</PageTitle>
+
+<div class="lk-pos-wrapper">
+    <!-- =========================================================
+         COLUMNA IZQUIERDA (60%): CATÁLOGO Y BÚSQUEDA RÁPIDA
+         ========================================================= -->
+    <div class="lk-pos-catalog-col">
+        <!-- Encabezado y Selector / Etiqueta de Sede Activa -->
+        <div class="lk-pos-header">
+            <div class="lk-pos-title-group">
+                <span class="lk-pos-accent"></span>
+                <div>
+                    <div class="lk-pos-title-row">
+                        <h1 class="lk-pos-title">Punto de Venta (POS)</h1>
+
+                        @if (SessionService.EsAdmin)
+                        {
+                            <div class="lk-sede-pill-select">
+                                <i class="bi bi-shop"></i>
+                                <select @bind="sedeActivaId" @bind:after="AlCambiarSedePos">
+                                    <option value="1">Local 2003</option>
+                                    <option value="2">Local 2039</option>
+                                </select>
+                            </div>
+                        }
+                        else
+                        {
+                            <span class="lk-sede-pill-fixed">
+                                <i class="bi bi-shop"></i>
+                                <span>@NombreSedeActiva</span>
+                            </span>
+                        }
+                    </div>
+                    <p class="lk-pos-subtitle">
+                        Tecnología Digital LK • C.C. Sanandrexitos Piso 2, Locales 2003 y 2039, Ibagué
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Barra de Búsqueda -->
+        <div class="lk-pos-search-box">
+            <i class="bi bi-search"></i>
+            <input type="text"
+                   class="lk-pos-search-input"
+                   placeholder="Buscar producto por nombre o código (ej. Vidrio, Audífonos, Mouse)..."
+                   @bind="textoBusqueda"
+                   @bind:event="oninput" />
+            @if (!string.IsNullOrEmpty(textoBusqueda))
+            {
+                <button type="button" class="lk-pos-clear-btn" @onclick='() => textoBusqueda = ""'>
+                    <i class="bi bi-x-circle-fill"></i>
+                </button>
+            }
+        </div>
+
+        <!-- Píldoras de Categorías -->
+        <div class="lk-pos-categories">
+            <button type="button"
+                    class="lk-cat-pill @(categoriaIdSeleccionada == 0 ? "active" : "")"
+                    @onclick="() => categoriaIdSeleccionada = 0">
+                <i class="bi bi-grid-fill"></i>
+                <span>Todos</span>
+            </button>
+
+            @foreach (var cat in categorias.Where(c => c.Activa))
+            {
+                <button type="button"
+                        class="lk-cat-pill @(categoriaIdSeleccionada == cat.Id ? "active" : "")"
+                        @onclick="() => categoriaIdSeleccionada = cat.Id">
+                    <i class="bi @ObtenerIconoCategoria(cat.Nombre)"></i>
+                    <span>@cat.Nombre</span>
+                </button>
+            }
+        </div>
+
+        <!-- Cuadrícula de Productos Disponibles -->
+        @if (!ProductosFiltrados.Any())
+        {
+            <div class="lk-pos-empty-catalog">
+                <i class="bi bi-search"></i>
+                <p>No hay productos activos que coincidan con tu búsqueda.</p>
+            </div>
+        }
+        else
+        {
+            <div class="lk-pos-grid">
+                @foreach (var prod in ProductosFiltrados)
+                {
+                    int stockLocal = prod.ObtenerStockPorSede(sedeActivaId);
+                    decimal precioMostrar = tarifaGlobal == TipoTarifa.Detal ? prod.PrecioDetal : prod.PrecioPorMayor;
+                    bool sinStock = stockLocal <= 0;
+
+                    <button type="button"
+                            class="lk-prod-card @(sinStock ? "out-of-stock" : "")"
+                            disabled="@sinStock"
+                            @onclick="() => AgregarAlCarrito(prod)">
+                        <div class="lk-prod-card-media">
+                            @if (!string.IsNullOrWhiteSpace(prod.ImagenUrl))
+                            {
+                                <img src="@prod.ImagenUrl" alt="@prod.Nombre" />
+                            }
+                            else
+                            {
+                                <div class="lk-prod-card-icon">
+                                    <i class="bi @ObtenerIconoCategoria(prod.CategoriaNombre)"></i>
+                                </div>
+                            }
+                        </div>
+
+                        <div class="lk-prod-card-name">@prod.Nombre</div>
+
+                        <div class="lk-prod-stock-badge @(sinStock ? "stock-zero" : (stockLocal <= prod.StockMinimo ? "stock-warn" : "stock-ok"))">
+                            <i class="bi @(sinStock ? "bi-x-circle-fill" : "bi-check-circle-fill")"></i>
+                            <span>@(sinStock ? "Agotado" : $"Stock: {stockLocal} uds")</span>
+                        </div>
+
+                        <div class="lk-prod-card-price">@FormatearCop(precioMostrar)</div>
+                    </button>
+                }
+            </div>
+        }
+    </div>
+
+    <!-- =========================================================
+         COLUMNA DERECHA (40%): CARRITO DE FACTURACIÓN Y COBRO
+         ========================================================= -->
+    <div class="lk-pos-cart-col">
+        <div class="lk-cart-panel">
+            <!-- Encabezado Azul Marino + Switch Tarifa Detal / Por Mayor -->
+            <div class="lk-cart-header">
+                <div class="lk-cart-title">
+                    <i class="bi bi-cart3"></i>
+                    <span>Carrito de Facturación</span>
+                </div>
+
+                <div class="lk-tarifa-switch">
+                    <button type="button"
+                            class="lk-tarifa-btn @(tarifaGlobal == TipoTarifa.Detal ? "active" : "")"
+                            @onclick="() => CambiarTarifaGlobal(TipoTarifa.Detal)">
+                        Tarifa Detal
+                    </button>
+                    <button type="button"
+                            class="lk-tarifa-btn @(tarifaGlobal == TipoTarifa.PorMayor ? "active" : "")"
+                            @onclick="() => CambiarTarifaGlobal(TipoTarifa.PorMayor)">
+                        Tarifa Por Mayor
+                    </button>
+                </div>
+            </div>
+
+            <!-- Alertas operativas rápidas -->
+            @if (!string.IsNullOrEmpty(alertaCarrito))
+            {
+                <div class="lk-cart-notice">
+                    <i class="bi bi-info-circle-fill"></i>
+                    <span>@alertaCarrito</span>
+                    <button type="button" @onclick="() => alertaCarrito = null"><i class="bi bi-x"></i></button>
+                </div>
+            }
+
+            <!-- Lista de Ítems en el Carrito -->
+            <div class="lk-cart-items">
+                @if (!carrito.Any())
+                {
+                    <div class="lk-cart-empty">
+                        <i class="bi bi-bag-plus"></i>
+                        <strong>El carrito está vacío</strong>
+                        <span>Haz clic en un producto de la izquierda para iniciar la venta en @NombreSedeActiva.</span>
+                    </div>
+                }
+                else
+                {
+                    @foreach (var item in carrito)
+                    {
+                        var prodRef = productos.FirstOrDefault(p => p.Id == item.ProductoId);
+                        int maxStock = prodRef?.ObtenerStockPorSede(sedeActivaId) ?? item.Cantidad;
+
+                        <div class="lk-cart-item @(item.EsDebajoDelCosto ? "item-danger" : "")">
+                            <div class="lk-cart-item-main">
+                                <div class="lk-cart-item-thumb">
+                                    @if (!string.IsNullOrWhiteSpace(prodRef?.ImagenUrl))
+                                    {
+                                        <img src="@prodRef.ImagenUrl" alt="@item.ProductoNombre" />
+                                    }
+                                    else
+                                    {
+                                        <i class="bi @ObtenerIconoCategoria(prodRef?.CategoriaNombre ?? "")"></i>
+                                    }
+                                </div>
+
+                                <div class="lk-cart-item-info">
+                                    <div class="lk-cart-item-name">@item.ProductoNombre</div>
+                                    <div class="lk-cart-item-unit">
+                                        @FormatearCop(item.PrecioListaUnitario) c/u
+                                        <span class="lk-tarifa-mini">(@(item.TarifaAplicada == TipoTarifa.Detal ? "Detal" : "Mayor"))</span>
+                                    </div>
+                                </div>
+
+                                <!-- Controles Cantidad (- / +) -->
+                                <div class="lk-qty-stepper">
+                                    <button type="button" @onclick="() => DisminuirCantidad(item)">−</button>
+                                    <span>@item.Cantidad</span>
+                                    <button type="button"
+                                            disabled="@(item.Cantidad >= maxStock)"
+                                            @onclick="() => AumentarCantidad(item, maxStock)">
+                                        +
+                                    </button>
+                                </div>
+
+                                <!-- Campo Editable de Precio Final (Negociación Controlada) -->
+                                <div class="lk-price-edit-box" title="Editar precio unitario acordado con el cliente">
+                                    <input type="number"
+                                           step="500"
+                                           min="0"
+                                           class="lk-price-input @(item.EsDebajoDelCosto ? "input-invalid" : "")"
+                                           @bind="item.PrecioFinalUnitario"
+                                           @bind:event="oninput" />
+                                </div>
+
+                                <!-- Eliminar ítem -->
+                                <button type="button"
+                                        class="lk-item-remove"
+                                        title="Quitar producto"
+                                        @onclick="() => EliminarDelCarrito(item)">
+                                    <i class="bi bi-trash3"></i>
+                                </button>
+                            </div>
+
+                            <!-- Validación de Seguridad: Precio menor al costo de adquisición -->
+                            @if (item.EsDebajoDelCosto)
+                            {
+                                <div class="lk-cost-warning">
+                                    <i class="bi bi-exclamation-circle-fill"></i>
+                                    <span>Precio menor al costo mínimo</span>
+                                </div>
+                            }
+                        </div>
+                    }
+                }
+            </div>
+
+            <!-- Sección Inferior de Pago y Confirmación -->
+            <div class="lk-cart-footer">
+                <div class="lk-pay-label">Método de Pago</div>
+                <div class="lk-pay-methods">
+                    <button type="button"
+                            class="lk-pay-btn @(metodoPago == "Efectivo" ? "active" : "")"
+                            @onclick='() => metodoPago = "Efectivo"'>
+                        <i class="bi bi-cash-coin"></i>
+                        <span>Efectivo</span>
+                    </button>
+
+                    <button type="button"
+                            class="lk-pay-btn @(metodoPago == "Nequi" ? "active" : "")"
+                            @onclick='() => metodoPago = "Nequi"'>
+                        <i class="bi bi-qr-code-scan"></i>
+                        <span>Nequi</span>
+                    </button>
+
+                    <button type="button"
+                            class="lk-pay-btn @(metodoPago == "Tarjeta" ? "active" : "")"
+                            @onclick='() => metodoPago = "Tarjeta"'>
+                        <i class="bi bi-credit-card-2-front-fill"></i>
+                        <span>Tarjeta</span>
+                    </button>
+                </div>
+
+                @if (SessionService.EsAdmin && carrito.Any())
+                {
+                    <div class="lk-admin-profit-bar">
+                        <span><i class="bi bi-graph-up-arrow"></i> Ganancia Neta de esta Venta (Solo Admin):</span>
+                        <strong class="@(GananciaNetaCarrito < 0 ? "text-danger" : "text-success")">
+                            @FormatearCop(GananciaNetaCarrito)
+                        </strong>
+                    </div>
+                }
+
+                <!-- Banner Total a Pagar -->
+                <div class="lk-total-banner">
+                    <span class="lk-total-label">Total a Pagar:</span>
+                    <span class="lk-total-amount">@FormatearCop(TotalCarrito)</span>
+                </div>
+
+                <!-- Botón Confirmar Venta -->
+                <button type="button"
+                        class="lk-btn-checkout"
+                        disabled="@(!PuedeConfirmarVenta || procesandoVenta)"
+                        @onclick="ConfirmarVentaAsync">
+                    <i class="bi bi-printer-fill"></i>
+                    <span>@(procesandoVenta ? "Registrando Venta..." : "Confirmar Venta e Imprimir")</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- =========================================================
+         MODAL DE COMPROBANTE / TICKET DE VENTA CONFIRMADA
+         ========================================================= -->
+    @if (ultimaVentaConfirmada != null)
+    {
+        <div class="lk-receipt-backdrop" @onclick="CerrarComprobante">
+            <div class="lk-receipt-card" @onclick:stopPropagation="true">
+                <div class="lk-receipt-top">
+                    <div class="lk-receipt-check">
+                        <i class="bi bi-check-lg"></i>
+                    </div>
+                    <h3>¡Venta Registrada!</h3>
+                    <p>Stock descontado automáticamente en <strong>@ultimaVentaConfirmada.SedeNombre</strong></p>
+                </div>
+
+                <div class="lk-receipt-body">
+                    <div class="lk-receipt-meta">
+                        <div><span>Factura:</span> <strong>@ultimaVentaConfirmada.NumeroFactura</strong></div>
+                        <div><span>Fecha:</span> <strong>@ultimaVentaConfirmada.Fecha.ToString("dd/MM/yyyy hh:mm tt")</strong></div>
+                        <div><span>Sede:</span> <strong>@ultimaVentaConfirmada.SedeNombre</strong></div>
+                        <div><span>Cajero:</span> <strong>@ultimaVentaConfirmada.CajeroNombre</strong></div>
+                        <div><span>Pago:</span> <strong>@ultimaVentaConfirmada.MetodoPago</strong></div>
+                    </div>
+
+                    <div class="lk-receipt-lines">
+                        @foreach (var det in ultimaVentaConfirmada.Detalles)
+                        {
+                            <div class="lk-receipt-line">
+                                <span>@det.Cantidad x @det.ProductoNombre</span>
+                                <strong>@FormatearCop(det.Subtotal)</strong>
+                            </div>
+                        }
+                    </div>
+
+                    <div class="lk-receipt-total">
+                        <span>TOTAL PAGADO</span>
+                        <strong>@FormatearCop(ultimaVentaConfirmada.TotalVenta)</strong>
+                    </div>
+
+                    <button type="button" class="lk-btn-new-sale" @onclick="CerrarComprobante">
+                        <i class="bi bi-plus-circle-fill"></i>
+                        <span>Iniciar Nueva Venta</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private readonly CultureInfo culturaCo = new("es-CO");
+
+    private List<ProductoDto> productos = new();
+    private List<CategoriaDto> categorias = new();
+    private List<DetalleVentaDto> carrito = new();
+
+    private int sedeActivaId = 1; // 1 = Local 2003, 2 = Local 2039
+    private string textoBusqueda = "";
+    private int categoriaIdSeleccionada = 0;
+    private TipoTarifa tarifaGlobal = TipoTarifa.Detal;
+    private string metodoPago = "Efectivo";
+    private string? alertaCarrito;
+    private bool procesandoVenta;
+    private VentaDto? ultimaVentaConfirmada;
+
+    protected override async Task OnInitializedAsync()
+    {
+        SincronizarSedeDesdeSesion();
+        SessionService.OnChange += AlCambiarSesion;
+        InventarioService.OnInventarioChanged += AlCambiarInventario;
+        await CargarCatalogoAsync();
+    }
+
+    private void SincronizarSedeDesdeSesion()
+    {
+        if (!SessionService.EsAdmin && SessionService.UsuarioActual?.SedeId is int sedeCajero)
+        {
+            sedeActivaId = sedeCajero;
+        }
+        else if (SessionService.SedeFiltroId is int sedeFiltro)
+        {
+            sedeActivaId = sedeFiltro;
+        }
+    }
+
+    private void AlCambiarSesion()
+    {
+        SincronizarSedeDesdeSesion();
+        carrito.Clear();
+        alertaCarrito = null;
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void AlCambiarSedePos()
+    {
+        carrito.Clear();
+        alertaCarrito = $"Terminal cambiada a {NombreSedeActiva}.";
+    }
+
+    private async Task CargarCatalogoAsync()
+    {
+        productos = await InventarioService.ObtenerProductosAsync(incluirInactivos: false);
+        categorias = await InventarioService.ObtenerCategoriasAsync();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void AlCambiarInventario() => _ = CargarCatalogoAsync();
+
+    private string NombreSedeActiva => sedeActivaId == 1 ? "Local 2003" : "Local 2039";
+
+    private string FormatearCop(decimal valor) =>
+        "$" + valor.ToString("#,##0", culturaCo);
+
+    private List<ProductoDto> ProductosFiltrados =>
+        productos
+            .Where(p => p.Activo)
+            .Where(p => categoriaIdSeleccionada == 0 || p.CategoriaId == categoriaIdSeleccionada)
+            .Where(p => string.IsNullOrWhiteSpace(textoBusqueda) ||
+                        p.Nombre.Contains(textoBusqueda, StringComparison.OrdinalIgnoreCase) ||
+                        p.Codigo.Contains(textoBusqueda, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+
+    private void AgregarAlCarrito(ProductoDto prod)
+    {
+        alertaCarrito = null;
+        int stockDisponible = prod.ObtenerStockPorSede(sedeActivaId);
+        if (stockDisponible <= 0) return;
+
+        decimal precioTarifa = tarifaGlobal == TipoTarifa.Detal ? prod.PrecioDetal : prod.PrecioPorMayor;
+        var existente = carrito.FirstOrDefault(i => i.ProductoId == prod.Id);
+
+        if (existente != null)
+        {
+            if (existente.Cantidad + 1 > stockDisponible)
+            {
+                alertaCarrito = $"Stock máximo alcanzado para '{prod.Nombre}' en {NombreSedeActiva} ({stockDisponible} uds).";
+                return;
+            }
+            existente.Cantidad++;
+        }
+        else
+        {
+            carrito.Add(new DetalleVentaDto
+            {
+                ProductoId = prod.Id,
+                ProductoNombre = prod.Nombre,
+                Cantidad = 1,
+                TarifaAplicada = tarifaGlobal,
+                CostoUnitarioSnapshot = prod.CostoAdquisicion,
+                PrecioListaUnitario = precioTarifa,
+                PrecioFinalUnitario = precioTarifa
+            });
+        }
+    }
+
+    private void CambiarTarifaGlobal(TipoTarifa nuevaTarifa)
+    {
+        tarifaGlobal = nuevaTarifa;
+        foreach (var item in carrito)
+        {
+            var prod = productos.FirstOrDefault(p => p.Id == item.ProductoId);
+            if (prod != null)
+            {
+                decimal precioTarifa = nuevaTarifa == TipoTarifa.Detal ? prod.PrecioDetal : prod.PrecioPorMayor;
+                item.TarifaAplicada = nuevaTarifa;
+                item.PrecioListaUnitario = precioTarifa;
+                item.PrecioFinalUnitario = precioTarifa;
+            }
+        }
+    }
+
+    private void AumentarCantidad(DetalleVentaDto item, int maxStock)
+    {
+        if (item.Cantidad < maxStock)
+        {
+            item.Cantidad++;
+        }
+    }
+
+    private void DisminuirCantidad(DetalleVentaDto item)
+    {
+        if (item.Cantidad > 1)
+        {
+            item.Cantidad--;
+        }
+        else
+        {
+            carrito.Remove(item);
+        }
+    }
+
+    private void EliminarDelCarrito(DetalleVentaDto item) => carrito.Remove(item);
+
+    private decimal TotalCarrito => carrito.Sum(i => i.Subtotal);
+
+    private decimal GananciaNetaCarrito => carrito.Sum(i => i.GananciaLinea);
+
+    private bool HayItemDebajoDelCosto => carrito.Any(i => i.EsDebajoDelCosto);
+
+    private bool PuedeConfirmarVenta => carrito.Any() && !HayItemDebajoDelCosto;
+
+    private async Task ConfirmarVentaAsync()
+    {
+        if (!PuedeConfirmarVenta || procesandoVenta) return;
+
+        procesandoVenta = true;
+        alertaCarrito = null;
+
+        var nuevaVenta = new VentaDto
+        {
+            SedeId = sedeActivaId,
+            SedeNombre = NombreSedeActiva,
+            CajeroNombre = SessionService.UsuarioActual?.NombreCompleto ?? "Cajero Mostrador",
+            MetodoPago = metodoPago,
+            TotalVenta = TotalCarrito,
+            GananciaNetaTotal = GananciaNetaCarrito,
+            Detalles = carrito.Select(d => new DetalleVentaDto
+            {
+                ProductoId = d.ProductoId,
+                ProductoNombre = d.ProductoNombre,
+                Cantidad = d.Cantidad,
+                TarifaAplicada = d.TarifaAplicada,
+                CostoUnitarioSnapshot = d.CostoUnitarioSnapshot,
+                PrecioListaUnitario = d.PrecioListaUnitario,
+                PrecioFinalUnitario = d.PrecioFinalUnitario
+            }).ToList()
+        };
+
+        var resultado = await VentasService.RegistrarVentaAsync(nuevaVenta);
+        procesandoVenta = false;
+
+        if (resultado.Exito)
+        {
+            ultimaVentaConfirmada = resultado.Venta ?? nuevaVenta;
+            carrito.Clear();
+            await CargarCatalogoAsync();
+        }
+        else
+        {
+            alertaCarrito = resultado.Mensaje;
+        }
+    }
+
+    private void CerrarComprobante() => ultimaVentaConfirmada = null;
+
+    private string ObtenerIconoCategoria(string nombreCat)
+    {
+        if (string.IsNullOrWhiteSpace(nombreCat)) return "bi-box-seam-fill";
+        var lower = nombreCat.ToLowerInvariant();
+        if (lower.Contains("vidrio") || lower.Contains("protección") || lower.Contains("proteccion")) return "bi-phone-fill";
+        if (lower.Contains("estuche") || lower.Contains("funda")) return "bi-shield-check";
+        if (lower.Contains("teclado") || lower.Contains("periférico") || lower.Contains("periferico")) return "bi-keyboard-fill";
+        if (lower.Contains("mouse") || lower.Contains("pad")) return "bi-mouse3-fill";
+        if (lower.Contains("cargador") || lower.Contains("cable")) return "bi-plug-fill";
+        if (lower.Contains("audio") || lower.Contains("audífono") || lower.Contains("audifono")) return "bi-earbuds";
+        return "bi-box-seam-fill";
+    }
+
+    public void Dispose()
+    {
+        SessionService.OnChange -= AlCambiarSesion;
+        InventarioService.OnInventarioChanged -= AlCambiarInventario;
+    }
+}

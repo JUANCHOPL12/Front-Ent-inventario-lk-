@@ -1,7 +1,883 @@
 ﻿@page "/"
+@implements IDisposable
+@using System.Globalization
+@using TecnologiaDigitalLK.Models
+@using TecnologiaDigitalLK.Services.Interfaces
+@inject IUserSessionService SessionService
+@inject NavigationManager Nav
 
-<PageTitle>Home</PageTitle>
+<PageTitle>Resumen Gerencial - Tecnología Digital LK</PageTitle>
 
-<h1>Hello, world!</h1>
+<div class="lk-dash-container">
+    <!-- 1. ENCABEZADO Y BOTONES DE ACCIÓN RÁPIDA -->
+    <div class="lk-dash-header">
+        <div class="lk-dash-title-group">
+            <span class="lk-title-accent"></span>
+            <div>
+                <h1 class="lk-dash-title">Resumen Gerencial</h1>
+                <p class="lk-dash-subtitle">
+                    Tecnología Digital LK • C.C. Sanandrexitos, Ibagué
+                    @if (SessionService.SedeFiltroId != null)
+                    {
+                        <span class="lk-sede-tag">
+                            • Filtrando: @(SessionService.SedeFiltroId == 1 ? "Local 2003" : "Local 2039")
+                        </span>
+                    }
+                </p>
+            </div>
+        </div>
 
-Welcome to your new app.
+        <div class="lk-dash-actions">
+            <button type="button" class="lk-btn-transfer" @onclick='() => Nav.NavigateTo("/inventario")'>
+                <i class="bi bi-arrow-left-right"></i>
+                <span>Trasladar Stock</span>
+            </button>
+            <button type="button" class="lk-btn-new" @onclick='() => Nav.NavigateTo("/inventario")'>
+                <i class="bi bi-plus-lg"></i>
+                <span>Nuevo Producto</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- 2. FILA DE 4 TARJETAS KPI -->
+    <div class="lk-kpi-grid">
+        <!-- KPI 1: Ventas Totales -->
+        <div class="lk-kpi-card kpi-blue">
+            <div class="lk-kpi-icon bg-blue">
+                <i class="bi bi-cart-fill"></i>
+            </div>
+            <div class="lk-kpi-info">
+                <div class="lk-kpi-label">Ventas Totales @EtiquetaPeriodo</div>
+                <div class="lk-kpi-value">@FormatearCop(MetricasActuales.VentasTotales)</div>
+                <div class="lk-kpi-trend trend-up">
+                    <i class="bi bi-arrow-up"></i>
+                    <span>@MetricasActuales.VariacionVentas vs periodo anterior</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- KPI 2: Ganancia Neta Real -->
+        <div class="lk-kpi-card kpi-green">
+            <div class="lk-kpi-icon bg-green">
+                <i class="bi bi-graph-up-arrow"></i>
+            </div>
+            <div class="lk-kpi-info">
+                <div class="lk-kpi-label">Ganancia Neta Real</div>
+                <div class="lk-kpi-value">@FormatearCop(MetricasActuales.GananciaNeta)</div>
+                <div class="lk-kpi-trend trend-up">
+                    <i class="bi bi-arrow-up"></i>
+                    <span>@MetricasActuales.VariacionGanancia vs periodo anterior</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- KPI 3: Unidades Vendidas -->
+        <div class="lk-kpi-card kpi-red">
+            <div class="lk-kpi-icon bg-red">
+                <i class="bi bi-box-seam"></i>
+            </div>
+            <div class="lk-kpi-info">
+                <div class="lk-kpi-label">Unidades Vendidas</div>
+                <div class="lk-kpi-value">@MetricasActuales.UnidadesVendidas uds</div>
+                <div class="lk-kpi-trend trend-up">
+                    <i class="bi bi-arrow-up"></i>
+                    <span>@MetricasActuales.VariacionUnidades vs periodo anterior</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- KPI 4: Gastos Operativos -->
+        <div class="lk-kpi-card kpi-amber">
+            <div class="lk-kpi-icon bg-amber">
+                <i class="bi bi-coin"></i>
+            </div>
+            <div class="lk-kpi-info">
+                <div class="lk-kpi-label">Gastos Operativos</div>
+                <div class="lk-kpi-value">@FormatearCop(MetricasActuales.GastosOperativos)</div>
+                <div class="lk-kpi-trend trend-warn">
+                    <i class="bi bi-arrow-up"></i>
+                    <span>@MetricasActuales.VariacionGastos vs periodo anterior</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. COMPARATIVA POR SUCURSAL (LOCAL 2003 VS LOCAL 2039) -->
+    <div class="lk-compare-card">
+        <div class="lk-compare-header">
+            <div class="lk-compare-title-area">
+                <i class="bi bi-bar-chart-fill"></i>
+                <span>Comparativa por Sucursal</span>
+            </div>
+
+            <div class="lk-period-tabs-wrapper">
+                <div class="lk-period-tabs">
+                    <button type="button"
+                            class="lk-period-btn @(periodoSeleccionado == "hoy" ? "active" : "")"
+                            @onclick='() => periodoSeleccionado = "hoy"'>
+                        Hoy
+                    </button>
+                    <button type="button"
+                            class="lk-period-btn @(periodoSeleccionado == "semana" ? "active" : "")"
+                            @onclick='() => periodoSeleccionado = "semana"'>
+                        Esta Semana
+                    </button>
+                    <button type="button"
+                            class="lk-period-btn @(periodoSeleccionado == "mes" ? "active" : "")"
+                            @onclick='() => periodoSeleccionado = "mes"'>
+                        Este Mes
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="lk-compare-body">
+            <!-- Fila Local 2003 -->
+            <div class="lk-branch-row @(SessionService.SedeFiltroId == 2 ? "dimmed" : "")">
+                <div class="lk-branch-meta">
+                    <div class="lk-branch-name">Local 2003</div>
+                    <div class="lk-branch-sub">Ventas: @FormatearCop(DatosComparativa.Ventas2003)</div>
+                </div>
+
+                <div class="lk-progress-track">
+                    <div class="lk-progress-fill fill-blue" style="width: @(DatosComparativa.Porcentaje2003)%;"></div>
+                </div>
+
+                <div class="lk-branch-stats">
+                    <div class="lk-branch-amount">@FormatearCop(DatosComparativa.Ventas2003)</div>
+                    <div class="lk-branch-pct">(@DatosComparativa.Porcentaje2003%)</div>
+                </div>
+            </div>
+
+            <div class="lk-branch-divider"></div>
+
+            <!-- Fila Local 2039 -->
+            <div class="lk-branch-row @(SessionService.SedeFiltroId == 1 ? "dimmed" : "")">
+                <div class="lk-branch-meta">
+                    <div class="lk-branch-name">Local 2039</div>
+                    <div class="lk-branch-sub">Ventas: @FormatearCop(DatosComparativa.Ventas2039)</div>
+                </div>
+
+                <div class="lk-progress-track">
+                    <div class="lk-progress-fill fill-navy" style="width: @(DatosComparativa.Porcentaje2039)%;"></div>
+                </div>
+
+                <div class="lk-branch-stats">
+                    <div class="lk-branch-amount">@FormatearCop(DatosComparativa.Ventas2039)</div>
+                    <div class="lk-branch-pct">(@DatosComparativa.Porcentaje2039%)</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. PANEL INFERIOR DIVIDIDO: ALERTAS DE STOCK CRÍTICO Y BAJA ROTACIÓN -->
+    <div class="lk-alerts-grid">
+        <!-- Columna Izquierda: Stock Crítico -->
+        <div class="lk-alert-panel">
+            <div class="lk-alert-header header-red">
+                <div class="lk-alert-title">
+                    <i class="bi bi-exclamation-triangle-fill"></i>
+                    <span>Alertas de Stock Crítico</span>
+                </div>
+                <button type="button" class="lk-alert-link" @onclick='() => Nav.NavigateTo("/inventario")'>
+                    <span>Ver Todo</span>
+                    <i class="bi bi-arrow-right"></i>
+                </button>
+            </div>
+
+            <div class="lk-alert-list">
+                @foreach (var item in AlertasStockFiltradas)
+                {
+                    <div class="lk-alert-item">
+                        <div class="lk-item-left">
+                            <div class="lk-item-icon icon-red">
+                                <i class="bi bi-box-seam"></i>
+                            </div>
+                            <div>
+                                <div class="lk-item-name">@item.Producto</div>
+                                <div class="lk-item-detail">@item.Detalle</div>
+                            </div>
+                        </div>
+                        <span class="lk-status-pill pill-red">Stock Crítico</span>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Columna Derecha: Baja Rotación / Estancados -->
+        <div class="lk-alert-panel">
+            <div class="lk-alert-header header-amber">
+                <div class="lk-alert-title">
+                    <i class="bi bi-clock-history"></i>
+                    <span>Baja Rotación / Estancados</span>
+                </div>
+                <button type="button" class="lk-alert-link" @onclick='() => Nav.NavigateTo("/inventario")'>
+                    <span>Ver Todo</span>
+                    <i class="bi bi-arrow-right"></i>
+                </button>
+            </div>
+
+            <div class="lk-alert-list">
+                @foreach (var item in BajaRotacionFiltrada)
+                {
+                    <div class="lk-alert-item">
+                        <div class="lk-item-left">
+                            <div class="lk-item-icon icon-amber">
+                                <i class="bi bi-box-seam"></i>
+                            </div>
+                            <div>
+                                <div class="lk-item-name">@item.Producto</div>
+                                <div class="lk-item-detail">@item.Detalle</div>
+                            </div>
+                        </div>
+                        <span class="lk-status-pill pill-amber">Baja Rotación</span>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .lk-dash-container {
+        display: flex;
+        flex-direction: column;
+        gap: 1.35rem;
+        max-width: 1380px;
+        margin: 0 auto;
+        font-family: 'Plus Jakarta Sans', 'Segoe UI', sans-serif;
+    }
+
+    /* 1. Encabezado */
+    .lk-dash-header {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+    }
+
+    .lk-dash-title-group {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+    }
+
+    .lk-title-accent {
+        width: 6px;
+        height: 48px;
+        border-radius: 999px;
+        background: linear-gradient(180deg, #0d5be1 0%, #053399 100%);
+        flex-shrink: 0;
+    }
+
+    .lk-dash-title {
+        margin: 0;
+        font-family: 'Russo One', sans-serif;
+        font-size: 1.72rem;
+        font-weight: 400;
+        color: #0b1736;
+        line-height: 1.15;
+        letter-spacing: 0.4px;
+    }
+
+    .lk-dash-subtitle {
+        margin: 2px 0 0;
+        font-size: 0.92rem;
+        color: #475569;
+        font-weight: 500;
+    }
+
+    .lk-sede-tag {
+        color: #0d5be1;
+        font-weight: 700;
+    }
+
+    .lk-dash-actions {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .lk-btn-transfer,
+    .lk-btn-new {
+        border: none;
+        border-radius: 12px;
+        padding: 0.68rem 1.25rem;
+        font-family: 'Plus Jakarta Sans', sans-serif;
+        font-size: 0.92rem;
+        font-weight: 700;
+        color: #ffffff;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: transform 0.15s ease, filter 0.15s ease;
+    }
+
+    .lk-btn-transfer {
+        background: linear-gradient(180deg, #0c54cf 0%, #063185 100%);
+        box-shadow: 0 6px 16px rgba(8, 66, 184, 0.28);
+    }
+
+    .lk-btn-new {
+        background: linear-gradient(180deg, #e51d1d 0%, #b00909 100%);
+        box-shadow: 0 6px 16px rgba(217, 30, 30, 0.28);
+    }
+
+    .lk-btn-transfer:hover,
+    .lk-btn-new:hover {
+        filter: brightness(1.08);
+        transform: translateY(-1px);
+    }
+
+    /* 2. Fila de 4 Tarjetas KPI */
+    .lk-kpi-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 1.15rem;
+    }
+
+    .lk-kpi-card {
+        position: relative;
+        background: #ffffff;
+        border-radius: 18px;
+        padding: 1.25rem 1.25rem 1.45rem;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        box-shadow: 0 6px 20px rgba(15, 23, 42, 0.06);
+        border: 1px solid #e2e8f0;
+        overflow: hidden;
+        transition: transform 0.18s ease, box-shadow 0.18s ease;
+    }
+
+    .lk-kpi-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 26px rgba(15, 23, 42, 0.1);
+    }
+
+    /* Ola inferior de color distintivo */
+    .lk-kpi-card::after {
+        content: "";
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        height: 9px;
+        clip-path: polygon(0 0, 48% 68%, 100% 35%, 100% 100%, 0% 100%);
+    }
+
+    .lk-kpi-card.kpi-blue::after {
+        background: linear-gradient(90deg, #0d6efd 0%, #084298 100%);
+    }
+
+    .lk-kpi-card.kpi-green::after {
+        background: linear-gradient(90deg, #059669 0%, #047857 100%);
+    }
+
+    .lk-kpi-card.kpi-red::after {
+        background: linear-gradient(90deg, #dc2626 0%, #991b1b 100%);
+    }
+
+    .lk-kpi-card.kpi-amber::after {
+        background: linear-gradient(90deg, #f59e0b 0%, #b45309 100%);
+    }
+
+    .lk-kpi-icon {
+        width: 54px;
+        height: 54px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #ffffff;
+        font-size: 1.45rem;
+        flex-shrink: 0;
+    }
+
+    .bg-blue {
+        background: linear-gradient(135deg, #1d74f5 0%, #0747a6 100%);
+        box-shadow: 0 4px 12px rgba(13, 110, 253, 0.35);
+    }
+
+    .bg-green {
+        background: linear-gradient(135deg, #10b981 0%, #047857 100%);
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35);
+    }
+
+    .bg-red {
+        background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
+        box-shadow: 0 4px 12px rgba(220, 38, 38, 0.35);
+    }
+
+    .bg-amber {
+        background: linear-gradient(135deg, #fbbf24 0%, #d97706 100%);
+        box-shadow: 0 4px 12px rgba(245, 158, 11, 0.35);
+    }
+
+    .lk-kpi-info {
+        min-width: 0;
+    }
+
+    .lk-kpi-label {
+        font-size: 0.84rem;
+        font-weight: 600;
+        color: #334155;
+        margin-bottom: 2px;
+    }
+
+    .lk-kpi-value {
+        font-family: 'Russo One', sans-serif;
+        font-size: 1.48rem;
+        font-weight: 400;
+        color: #0b1736;
+        line-height: 1.15;
+        letter-spacing: 0.3px;
+    }
+
+    .lk-kpi-trend {
+        margin-top: 4px;
+        font-size: 0.78rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 3px;
+    }
+
+    .trend-up {
+        color: #059669;
+    }
+
+    .trend-warn {
+        color: #dc2626;
+    }
+
+    /* 3. Comparativa por Sucursal */
+    .lk-compare-card {
+        background: #ffffff;
+        border-radius: 18px;
+        box-shadow: 0 6px 20px rgba(15, 23, 42, 0.06);
+        border: 1px solid #e2e8f0;
+        overflow: hidden;
+    }
+
+    .lk-compare-header {
+        background: linear-gradient(90deg, #06153d 0%, #0b2669 100%);
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        padding-left: 1.4rem;
+        min-height: 54px;
+    }
+
+    .lk-compare-title-area {
+        color: #ffffff;
+        font-family: 'Russo One', sans-serif;
+        font-size: 1.02rem;
+        font-weight: 400;
+        letter-spacing: 0.5px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 0.75rem 0;
+    }
+
+    .lk-period-tabs-wrapper {
+        background: #ffffff;
+        padding: 0.55rem 1.25rem 0.55rem 1.75rem;
+        border-top-left-radius: 26px;
+        display: flex;
+        align-items: center;
+    }
+
+    .lk-period-tabs {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        background: #f1f5f9;
+        padding: 4px;
+        border-radius: 999px;
+    }
+
+    .lk-period-btn {
+        border: none;
+        background: transparent;
+        color: #334155;
+        font-size: 0.82rem;
+        font-weight: 700;
+        padding: 0.35rem 0.95rem;
+        border-radius: 999px;
+        transition: all 0.15s ease;
+    }
+
+    .lk-period-btn:hover {
+        color: #0d5be1;
+    }
+
+    .lk-period-btn.active {
+        background: linear-gradient(180deg, #0d6efd 0%, #084298 100%);
+        color: #ffffff;
+        box-shadow: 0 3px 10px rgba(13, 110, 253, 0.35);
+    }
+
+    .lk-compare-body {
+        padding: 1.25rem 1.5rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.9rem;
+    }
+
+    .lk-branch-row {
+        display: grid;
+        grid-template-columns: 170px 1fr 125px;
+        align-items: center;
+        gap: 1.25rem;
+        transition: opacity 0.2s ease;
+    }
+
+    .lk-branch-row.dimmed {
+        opacity: 0.42;
+    }
+
+    .lk-branch-meta {
+        border-right: 1px solid #e2e8f0;
+        padding-right: 1rem;
+    }
+
+    .lk-branch-name {
+        font-size: 1.05rem;
+        font-weight: 800;
+        color: #0b1736;
+    }
+
+    .lk-branch-sub {
+        font-size: 0.82rem;
+        color: #64748b;
+        font-weight: 500;
+    }
+
+    .lk-progress-track {
+        width: 100%;
+        height: 18px;
+        background-color: #e2e8f0;
+        border-radius: 999px;
+        overflow: hidden;
+    }
+
+    .lk-progress-fill {
+        height: 100%;
+        border-radius: 999px;
+        transition: width 0.35s ease;
+    }
+
+    .fill-blue {
+        background: linear-gradient(90deg, #0d6efd 0%, #0257d5 100%);
+    }
+
+    .fill-navy {
+        background: linear-gradient(90deg, #0a2558 0%, #103880 100%);
+    }
+
+    .lk-branch-stats {
+        text-align: right;
+    }
+
+    .lk-branch-amount {
+        font-family: 'Russo One', sans-serif;
+        font-size: 1rem;
+        font-weight: 400;
+        color: #0b1736;
+    }
+
+    .lk-branch-pct {
+        font-size: 0.84rem;
+        font-weight: 700;
+        color: #0d6efd;
+    }
+
+    .lk-branch-divider {
+        height: 1px;
+        background-color: #e2e8f0;
+    }
+
+    /* 4. Paneles Inferiores de Alertas */
+    .lk-alerts-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1.25rem;
+    }
+
+    .lk-alert-panel {
+        background: #ffffff;
+        border-radius: 18px;
+        box-shadow: 0 6px 20px rgba(15, 23, 42, 0.06);
+        border: 1px solid #e2e8f0;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .lk-alert-header {
+        padding: 0.85rem 1.25rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        color: #ffffff;
+    }
+
+    .header-red {
+        background: linear-gradient(90deg, #c81010 0%, #a30808 100%);
+    }
+
+    .header-amber {
+        background: linear-gradient(90deg, #cf8608 0%, #a86804 100%);
+    }
+
+    .lk-alert-title {
+        font-family: 'Russo One', sans-serif;
+        font-size: 0.96rem;
+        font-weight: 400;
+        letter-spacing: 0.4px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .lk-alert-link {
+        background: rgba(255, 255, 255, 0.12);
+        border: 1px solid rgba(255, 255, 255, 0.65);
+        color: #ffffff;
+        border-radius: 999px;
+        padding: 0.25rem 0.85rem;
+        font-size: 0.78rem;
+        font-weight: 700;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: background-color 0.15s ease;
+    }
+
+    .lk-alert-link:hover {
+        background: rgba(255, 255, 255, 0.25);
+    }
+
+    .lk-alert-list {
+        padding: 0.75rem 1.25rem;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .lk-alert-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 0.8rem 0;
+        border-bottom: 1px solid #f1f5f9;
+    }
+
+    .lk-alert-item:last-child {
+        border-bottom: none;
+    }
+
+    .lk-item-left {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+    }
+
+    .lk-item-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+        flex-shrink: 0;
+    }
+
+    .icon-red {
+        background-color: #fee2e2;
+        color: #dc2626;
+    }
+
+    .icon-amber {
+        background-color: #fef3c7;
+        color: #d97706;
+    }
+
+    .lk-item-name {
+        font-size: 0.96rem;
+        font-weight: 700;
+        color: #0b1736;
+    }
+
+    .lk-item-detail {
+        font-size: 0.82rem;
+        color: #64748b;
+        font-weight: 500;
+    }
+
+    .lk-status-pill {
+        padding: 0.32rem 0.85rem;
+        border-radius: 999px;
+        font-size: 0.78rem;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+
+    .pill-red {
+        background-color: #fee2e2;
+        color: #b91c1c;
+    }
+
+    .pill-amber {
+        background-color: #fde68a;
+        color: #92400e;
+    }
+
+    /* Responsivo */
+    @@media (max-width: 1150px) {
+        .lk-kpi-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    @@media (max-width: 850px) {
+        .lk-alerts-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .lk-branch-row {
+            grid-template-columns: 1fr;
+            gap: 0.5rem;
+        }
+
+        .lk-branch-meta {
+            border-right: none;
+            padding-right: 0;
+        }
+
+        .lk-branch-stats {
+            text-align: left;
+            display: flex;
+            align-items: baseline;
+            gap: 8px;
+        }
+    }
+
+    @@media (max-width: 576px) {
+        .lk-kpi-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+@code {
+    private string periodoSeleccionado = "hoy";
+    private readonly CultureInfo culturaCo = new("es-CO");
+
+    protected override void OnInitialized()
+    {
+        if (SessionService.EstaAutenticado && !SessionService.EsAdmin)
+        {
+            Nav.NavigateTo("/pos");
+            return;
+        }
+
+        SessionService.OnChange += RefrescarVista;
+    }
+
+    private void RefrescarVista()
+    {
+        if (SessionService.EstaAutenticado && !SessionService.EsAdmin)
+        {
+            Nav.NavigateTo("/pos");
+            return;
+        }
+        InvokeAsync(StateHasChanged);
+    }
+
+    private string EtiquetaPeriodo => periodoSeleccionado switch
+    {
+        "semana" => "Semana",
+        "mes" => "Mes",
+        _ => "Hoy"
+    };
+
+    private string FormatearCop(decimal valor) =>
+        "$" + valor.ToString("#,##0", culturaCo);
+
+    private (decimal Ventas2003, decimal Ventas2039, int Porcentaje2003, int Porcentaje2039) DatosComparativa =>
+        periodoSeleccionado switch
+        {
+            "semana" => (6420000m, 5580000m, 54, 46),
+            "mes" => (26800000m, 23200000m, 54, 46),
+            _ => (980000m, 870000m, 53, 47)
+        };
+
+    private (decimal VentasTotales, decimal GananciaNeta, int UnidadesVendidas, decimal GastosOperativos,
+             string VariacionVentas, string VariacionGanancia, string VariacionUnidades, string VariacionGastos) MetricasActuales
+    {
+        get
+        {
+            var comp = DatosComparativa;
+            decimal factorSede = SessionService.SedeFiltroId switch
+            {
+                1 => (decimal)comp.Porcentaje2003 / 100m,
+                2 => (decimal)comp.Porcentaje2039 / 100m,
+                _ => 1m
+            };
+
+            decimal ventas = SessionService.SedeFiltroId switch
+            {
+                1 => comp.Ventas2003,
+                2 => comp.Ventas2039,
+                _ => comp.Ventas2003 + comp.Ventas2039
+            };
+
+            decimal baseGanancia = periodoSeleccionado switch { "semana" => 4150000m, "mes" => 17400000m, _ => 640000m };
+            int baseUnidades = periodoSeleccionado switch { "semana" => 218, "mes" => 910, _ => 34 };
+            decimal baseGastos = periodoSeleccionado switch { "semana" => 280000m, "mes" => 1120000m, _ => 45000m };
+
+            return (
+                ventas,
+                Math.Round(baseGanancia * factorSede, 0),
+                Math.Max(1, (int)Math.Round(baseUnidades * factorSede)),
+                Math.Round(baseGastos * factorSede, 0),
+                "+12%",
+                "+18%",
+                "+10%",
+                "+5%"
+            );
+        }
+    }
+
+    private record AlertaItem(string Producto, string Detalle, int SedeId);
+
+    private List<AlertaItem> TodasAlertasStock { get; } = new()
+    {
+        new("Vidrio Templado Tablet", "2 uds en Local 2003", 1),
+        new("Teclado USB", "1 ud en Local 2039", 2)
+    };
+
+    private List<AlertaItem> TodaBajaRotacion { get; } = new()
+    {
+        new("Estuche Tablet 7\"", "42 días sin venta • Local 2003", 1),
+        new("Padmouse Ergonómico XL", "35 días sin venta • Local 2039", 2)
+    };
+
+    private IEnumerable<AlertaItem> AlertasStockFiltradas =>
+        SessionService.SedeFiltroId == null
+            ? TodasAlertasStock
+            : TodasAlertasStock.Where(a => a.SedeId == SessionService.SedeFiltroId);
+
+    private IEnumerable<AlertaItem> BajaRotacionFiltrada =>
+        SessionService.SedeFiltroId == null
+            ? TodaBajaRotacion.Take(1)
+            : TodaBajaRotacion.Where(a => a.SedeId == SessionService.SedeFiltroId);
+
+    public void Dispose() => SessionService.OnChange -= RefrescarVista;
+}
