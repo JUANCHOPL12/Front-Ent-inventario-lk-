@@ -382,7 +382,7 @@ else
 
                         <div class="lk-modal-footer">
                             <button type="button" class="lk-btn-cancel" @onclick="CerrarModals">Cancelar</button>
-                            <button type="button" class="lk-btn-save-blue" @onclick="ConfirmarCambioClave">
+                            <button type="button" class="lk-btn-save-blue" @onclick="ConfirmarCambioClaveAsync">
                                 <i class="bi bi-shield-check"></i>
                                 <span>Actualizar Clave</span>
                             </button>
@@ -528,6 +528,11 @@ else
             return;
         }
 
+        if (!string.IsNullOrWhiteSpace(claveTemporalInput))
+        {
+            usuarioEditando.PasswordTemporal = claveTemporalInput.Trim();
+        }
+
         if (usuarioEditando.Rol == RolUsuario.Admin)
         {
             usuarioEditando.SedeId = null;
@@ -566,11 +571,16 @@ else
         mostrarModalClave = true;
     }
 
-    private void ConfirmarCambioClave()
+    private async Task ConfirmarCambioClaveAsync()
     {
         if (usuarioClaveTarget == null || string.IsNullOrWhiteSpace(nuevaClaveReset)) return;
+
+        usuarioClaveTarget.PasswordTemporal = nuevaClaveReset.Trim();
+        await AdministracionService.GuardarUsuarioAsync(usuarioClaveTarget);
+
         mostrarModalClave = false;
         mensajeFeedback = $"Contraseña actualizada correctamente para '{usuarioClaveTarget.Username}'.";
+        await CargarDatosAsync();
     }
 
     private void CerrarModals()

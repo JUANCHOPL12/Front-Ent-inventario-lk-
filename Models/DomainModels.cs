@@ -14,7 +14,7 @@ public enum TipoTarifa
     PorMayor
 }
 
-// Representa cada tienda física (Local 1 y Local 2)
+// Representa cada tienda física (Local 1 y Local 2) -> Tabla BD: Sucursales
 public class SedeDto
 {
     public int Id { get; set; }
@@ -23,19 +23,20 @@ public class SedeDto
     public bool Activa { get; set; } = true;
 }
 
-// Representa a cada persona que inicia sesión
+// Representa a cada persona que inicia sesión -> Tabla BD: Usuarios
 public class UsuarioDto
 {
     public int Id { get; set; }
     public string NombreCompleto { get; set; } = string.Empty;
     public string Username { get; set; } = string.Empty;
+    public string? PasswordTemporal { get; set; } // Se usa solo al crear usuario o cambiar clave (PasswordHash en BD)
     public RolUsuario Rol { get; set; }
     public int? SedeId { get; set; } // Null si es Admin (ve ambos); 1 o 2 si es Cajero
     public string NombreSede { get; set; } = string.Empty;
     public bool Activo { get; set; } = true;
 }
 
-// Categorías de productos (Ej: Cargadores, Audio, Protección)
+// Categorías de productos (Ej: Cargadores, Audio, Protección) -> Tabla BD: Categorias
 public class CategoriaDto
 {
     public int Id { get; set; }
@@ -43,7 +44,16 @@ public class CategoriaDto
     public bool Activa { get; set; } = true;
 }
 
-// Ficha técnica completa de cada producto del catálogo
+// Métodos de pago disponibles -> Tabla BD: MetodosPago
+public class MetodoPagoDto
+{
+    public int Id { get; set; }
+    public string Nombre { get; set; } = string.Empty;
+    public bool EsEfectivo { get; set; }
+    public bool Activo { get; set; } = true;
+}
+
+// Ficha técnica completa de cada producto del catálogo -> Tablas BD: Productos + StockSucursal
 public class ProductoDto
 {
     public int Id { get; set; }
@@ -71,11 +81,11 @@ public class ProductoDto
     public int StockTotal => StockLocal1 + StockLocal2;
     public decimal GananciaUnitariaDetal => PrecioDetal - CostoAdquisicion;
     public decimal GananciaUnitariaMayor => PrecioPorMayor - CostoAdquisicion;
-    
-    public decimal MargenDetalPorcentaje => PrecioDetal > 0 
+
+    public decimal MargenDetalPorcentaje => PrecioDetal > 0
         ? Math.Round((GananciaUnitariaDetal / PrecioDetal) * 100, 1) : 0;
-        
-    public decimal MargenMayorPorcentaje => PrecioPorMayor > 0 
+
+    public decimal MargenMayorPorcentaje => PrecioPorMayor > 0
         ? Math.Round((GananciaUnitariaMayor / PrecioPorMayor) * 100, 1) : 0;
 
     // Devuelve el stock según la sede que se esté consultando (1, 2 o Consolidado)
@@ -87,7 +97,7 @@ public class ProductoDto
     };
 }
 
-// Registro de mercancía movida entre Local 1 y Local 2
+// Registro de mercancía movida entre Local 1 y Local 2 -> Tablas BD: Traslados + DetalleTraslados
 public class TrasladoDto
 {
     public int Id { get; set; }
@@ -99,11 +109,12 @@ public class TrasladoDto
     public int SedeDestinoId { get; set; }
     public string SedeDestinoNombre { get; set; } = string.Empty;
     public int Cantidad { get; set; }
+    public int UsuarioId { get; set; } // FK a Usuarios en BD
     public string UsuarioResponsable { get; set; } = string.Empty;
     public string Observacion { get; set; } = string.Empty;
 }
 
-// Cada línea/producto dentro del carrito de compras del POS
+// Cada línea/producto dentro del carrito de compras del POS -> Tabla BD: DetalleVentas
 public class DetalleVentaDto
 {
     public int ProductoId { get; set; }
@@ -116,12 +127,12 @@ public class DetalleVentaDto
 
     public decimal Subtotal => PrecioFinalUnitario * Cantidad;
     public decimal GananciaLinea => (PrecioFinalUnitario - CostoUnitarioSnapshot) * Cantidad;
-    
+
     // Regla de seguridad: detecta si el cajero intentó rebajar por debajo del costo
     public bool EsDebajoDelCosto => PrecioFinalUnitario < CostoUnitarioSnapshot;
 }
 
-// Encabezado de una factura/venta realizada
+// Encabezado de una factura/venta realizada -> Tabla BD: Ventas
 public class VentaDto
 {
     public int Id { get; set; }
@@ -129,20 +140,23 @@ public class VentaDto
     public DateTime Fecha { get; set; } = DateTime.Now;
     public int SedeId { get; set; }
     public string SedeNombre { get; set; } = string.Empty;
+    public int UsuarioId { get; set; } // FK a Usuarios en BD
     public string CajeroNombre { get; set; } = string.Empty;
+    public int MetodoPagoId { get; set; } = 1; // FK a MetodosPago en BD (1=Efectivo, 2=Nequi, 3=Tarjeta)
     public string MetodoPago { get; set; } = "Efectivo";
     public decimal TotalVenta { get; set; }
     public decimal GananciaNetaTotal { get; set; }
     public List<DetalleVentaDto> Detalles { get; set; } = new();
 }
 
-// Gastos operativos del día por local (domicilios, insumos, etc.)
+// Gastos operativos del día por local -> Tabla BD: Gastos
 public class GastoOperativoDto
 {
     public int Id { get; set; }
     public DateTime Fecha { get; set; } = DateTime.Now;
     public int SedeId { get; set; }
     public string SedeNombre { get; set; } = string.Empty;
+    public int UsuarioId { get; set; } // FK a Usuarios en BD
     public string Concepto { get; set; } = string.Empty;
     public string CategoriaGasto { get; set; } = "Operativo";
     public decimal Monto { get; set; }

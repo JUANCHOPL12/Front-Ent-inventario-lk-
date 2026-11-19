@@ -503,6 +503,13 @@
 
     private bool PuedeConfirmarVenta => carrito.Any() && !HayItemDebajoDelCosto;
 
+    private int ObtenerMetodoPagoId(string nombreMetodo) => nombreMetodo switch
+    {
+        "Nequi" => 2,
+        "Tarjeta" => 3,
+        _ => 1 // Efectivo
+    };
+
     private async Task ConfirmarVentaAsync()
     {
         if (!PuedeConfirmarVenta || procesandoVenta) return;
@@ -514,7 +521,9 @@
         {
             SedeId = sedeActivaId,
             SedeNombre = NombreSedeActiva,
+            UsuarioId = SessionService.UsuarioActual?.Id ?? 1,
             CajeroNombre = SessionService.UsuarioActual?.NombreCompleto ?? "Cajero Mostrador",
+            MetodoPagoId = ObtenerMetodoPagoId(metodoPago),
             MetodoPago = metodoPago,
             TotalVenta = TotalCarrito,
             GananciaNetaTotal = GananciaNetaCarrito,

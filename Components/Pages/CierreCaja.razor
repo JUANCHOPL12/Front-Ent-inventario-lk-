@@ -461,6 +461,7 @@
             Fecha = fechaSeleccionada.Date.Add(DateTime.Now.TimeOfDay),
             SedeId = sedeDestinoId,
             SedeNombre = nombreSede,
+            UsuarioId = SessionService.UsuarioActual?.Id ?? 1,
             Concepto = nuevoGastoConcepto.Trim(),
             CategoriaGasto = nuevoGastoCategoria,
             Monto = nuevoGastoMonto.Value,
